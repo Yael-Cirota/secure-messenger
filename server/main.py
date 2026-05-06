@@ -23,6 +23,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models import create_tables
 from .routes import router
@@ -37,7 +38,7 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    await create_tables()
     yield
 
 
@@ -46,6 +47,13 @@ app = FastAPI(
     description="Authenticated, encrypted REST API for private messaging",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(router)

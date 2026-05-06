@@ -18,10 +18,11 @@ HOW TESTS WORK HERE:
   wiped clean before every single test.
 """
 
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select as sa_select
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from server.main import app
 from server.models import Base, get_db
@@ -32,17 +33,14 @@ from server.crypto import encrypt, decrypt
 # Test database setup — uses a separate file, wiped before each test
 # ---------------------------------------------------------------------------
 
-TEST_DB_URL = "sqlite:///./test_messenger.db"
-test_engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestingSession = sessionmaker(bind=test_engine, autocommit=False, autoflush=False)
+TEST_DB_URL = "sqlite+aiosqlite:///./test_messenger.db"
+test_engine = create_async_engine(TEST_DB_URL)
+TestingSession = async_sessionmaker(bind=test_engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
 
-def override_get_db():
-    db = TestingSession()
-    try:
+async def override_get_db():
+    async with TestingSession() as db:
         yield db
-    finally:
-        db.close()
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -50,10 +48,18 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(autouse=True)
 def fresh_db():
-    Base.metadata.drop_all(bind=test_engine)
-    Base.metadata.create_all(bind=test_engine)
+    async def setup():
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+
+    async def teardown():
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+
+    asyncio.run(setup())
     yield
-    Base.metadata.drop_all(bind=test_engine)
+    asyncio.run(teardown())
 
 
 @pytest.fixture
@@ -154,15 +160,21 @@ class TestEncryption:
     def test_messages_are_stored_encrypted(self, client):
         from server.models import Message
         token = register_and_login(client)
-        # send a message
-        # ... your code here ...
-        # query the DB directly
-        db = TestingSession()
-        row = db.query(Message).first()
-        db.close()
-        # assert the ciphertext is not plain text
-        # assert decrypt(ciphertext) returns the original
-        pass
+        original = "super secret message"
+        client.post(
+            "/messages",
+            json={"content": original, "recipient": "alice"},
+            headers=auth(token),
+        )
+
+        async def get_row():
+            async with TestingSession() as db:
+                result = await db.execute(sa_select(Message))
+                return result.scalars().first()
+
+        row = asyncio.run(get_row())
+        assert row.ciphertext != original
+        assert decrypt(row.ciphertext) == original
 
 
 # ===========================================================================
@@ -205,9 +217,20 @@ class TestMessaging:
     def test_user_sees_only_their_messages(self, client):
         alice_token = register_and_login(client, "alice", "secret123")
         bob_token   = register_and_login(client, "bob",   "secret456")
-        register_and_login(client, "charlie", "secret789")
+        charlie_token = register_and_login(client, "charlie", "secret789")
 
         # alice → bob
+        client.post("/messages", json={"content": "hi bob", "recipient": "bob"}, headers=auth(alice_token))
         # charlie → bob  (alice should NOT see this)
-        # ... your code here ...
-        pass
+        client.post("/messages", json={"content": "hey bob from charlie", "recipient": "bob"}, headers=auth(charlie_token))
+
+        # alice fetches her messages — should see only alice↔bob, not charlie→bob
+        response = client.get("/messages", headers=auth(alice_token))
+        assert response.status_code == 200
+        messages = response.json()
+        senders = {m["sender"] for m in messages}
+        recipients = {m["recipient"] for m in messages}
+        assert all("alice" in (m["sender"], m["recipient"]) for m in messages), \
+            "Alice should only see messages where she is sender or recipient"
+        assert not any(m["sender"] == "charlie" and m["recipient"] == "bob" for m in messages), \
+            "Alice should not see charlie→bob messages"

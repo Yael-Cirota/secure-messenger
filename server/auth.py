@@ -72,6 +72,7 @@ CONCEPT 3 — FASTAPI DEPENDENCY INJECTION
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import asyncio
 import bcrypt
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
@@ -88,25 +89,27 @@ _bearer = HTTPBearer()
 # ---------------------------------------------------------------------------
 # TODO 1 — Hash a plain-text password with bcrypt
 # ---------------------------------------------------------------------------
-def hash_password(plain: str) -> str:
+async def hash_password(plain: str) -> str:
     """
     Return a bcrypt hash of the password.
     This is what gets stored in the database — never the plain text.
     """
-    # your code here
-    pass
+    return await asyncio.to_thread(
+        lambda: bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+    )
 
 
 # ---------------------------------------------------------------------------
 # TODO 2 — Check a plain-text password against a stored bcrypt hash
 # ---------------------------------------------------------------------------
-def verify_password(plain: str, hashed: str) -> bool:
+async def verify_password(plain: str, hashed: str) -> bool:
     """
     Return True if the plain password matches the stored hash.
     Used at login time.
     """
-    # your code here
-    pass
+    return await asyncio.to_thread(
+        lambda: bcrypt.checkpw(plain.encode(), hashed.encode())
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -118,8 +121,9 @@ def create_token(username: str) -> str:
     then sign and return it as a string.
     Hint: use TOKEN_EXPIRE_HOURS and datetime.now(timezone.utc).
     """
-    # your code here
-    pass
+    expire = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
+    payload = {"sub": username, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 # ---------------------------------------------------------------------------
@@ -130,8 +134,11 @@ def decode_token(token: str) -> Optional[str]:
     Decode the token and return the username ("sub" field).
     Return None if the token is invalid or expired — do not raise.
     """
-    # your code here
-    pass
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -146,5 +153,10 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -
     Usage in a route:
         def my_route(username: str = Depends(require_auth)):
     """
-    # your code here
-    pass
+    username = decode_token(credentials.credentials)
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+    return username

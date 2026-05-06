@@ -39,27 +39,23 @@ USEFUL REFERENCE:
 
 from datetime import datetime, timezone
 
-from sqlalchemy import create_engine, String, Text, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy import String, Text, DateTime
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-DATABASE_URL = "sqlite:///./messenger.db"
+DATABASE_URL = "sqlite+aiosqlite:///./messenger.db"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, echo=False)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+engine = create_async_engine(DATABASE_URL, echo=False)
+SessionLocal = async_sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
 
-def get_db():
+async def get_db():
     """
     FastAPI dependency — opens a DB session for one request, closes it after.
-    You don't need to change this. Just use it in your routes:
-        def my_route(db: Session = Depends(get_db)):
     """
-    db = SessionLocal()
-    try:
+    async with SessionLocal() as db:
         yield db
-    finally:
-        db.close()
 
 
 class Base(DeclarativeBase):
@@ -72,7 +68,10 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    # your columns here
+    id:            Mapped[int]      = mapped_column(primary_key=True)
+    username:      Mapped[str]      = mapped_column(String(50), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str]      = mapped_column(String(255), nullable=False)
+    created_at:    Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 # ---------------------------------------------------------------------------
@@ -81,9 +80,14 @@ class User(Base):
 class Message(Base):
     __tablename__ = "messages"
 
-    # your columns here
+    id:         Mapped[int]      = mapped_column(primary_key=True)
+    sender:     Mapped[str]      = mapped_column(String(50), nullable=False, index=True)
+    recipient:  Mapped[str]      = mapped_column(String(50), nullable=False, index=True)
+    ciphertext: Mapped[str]      = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
-def create_tables():
+async def create_tables():
     """Creates all tables in the database if they don't exist yet."""
-    Base.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

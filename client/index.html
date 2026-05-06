@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Messenger</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── AUTH SCREEN ───────────────────────────────────────────── */
+    #auth-screen {
+      width: 100%;
+      max-width: 400px;
+      padding: 16px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 40px 36px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+
+    .card h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .card .subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 28px;
+    }
+
+    .tab-row {
+      display: flex;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.25);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus { border-color: #7c3aed; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .err-msg {
+      font-size: 0.82rem;
+      color: #f87171;
+      text-align: center;
+      min-height: 20px;
+      margin-top: 10px;
+    }
+
+    /* ── CHAT SCREEN ───────────────────────────────────────────── */
+    #chat-screen {
+      display: none;
+      width: 100%;
+      max-width: 780px;
+      height: 92vh;
+      padding: 16px;
+    }
+
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #7c3aed22, #3b82f622);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .chat-header .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .chat-header .who {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .logout-btn {
+      background: rgba(248,113,113,0.15);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: #f87171;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover { background: rgba(248,113,113,0.28); }
+
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .msg-bubble {
+      max-width: 68%;
+      padding: 10px 16px;
+      border-radius: 16px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .msg-bubble.sent {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-bubble.received {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.9);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-meta {
+      font-size: 0.7rem;
+      margin-top: 4px;
+      opacity: 0.55;
+    }
+
+    .msg-bubble.sent .msg-meta { text-align: right; }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.9rem;
+      gap: 8px;
+    }
+
+    .empty-icon { font-size: 2.5rem; }
+
+    /* ── COMPOSE BAR ───────────────────────────────────────────── */
+    .compose-bar {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .compose-bar input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .compose-bar input:focus { border-color: #7c3aed; }
+
+    #msg-input {
+      flex: 3;
+    }
+
+    #recipient-input {
+      flex: 1.5;
+    }
+
+    .send-btn {
+      padding: 10px 22px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .send-btn:hover { opacity: 0.85; }
+
+    .refresh-btn {
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .refresh-btn:hover { background: rgba(255,255,255,0.12); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ AUTH SCREEN ═══════════════════════ -->
+<div id="auth-screen">
+  <div class="card">
+    <h1>Secure Messenger</h1>
+    <p class="subtitle">End-to-end encrypted messaging</p>
+
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div id="form-login">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="yourname" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+
+    <div id="form-register" style="display:none">
+      <div class="field">
+        <label>Username <span style="color:#94a3b8">(3–50 chars)</span></label>
+        <input type="text" id="reg-username" placeholder="yourname" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Password <span style="color:#94a3b8">(min 6 chars)</span></label>
+        <input type="password" id="reg-password" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Create Account</button>
+    </div>
+
+    <p class="err-msg" id="auth-error"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CHAT SCREEN ═══════════════════════ -->
+<div id="chat-screen">
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <span class="logo">Secure Messenger</span>
+      <span class="who" id="logged-as"></span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+
+    <div class="messages-area" id="messages-area">
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">💬</span>
+        <span>No messages yet. Send one below!</span>
+      </div>
+    </div>
+
+    <div class="compose-bar">
+      <input type="text" id="recipient-input" placeholder="Recipient" />
+      <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')doSend()" />
+      <button class="send-btn" onclick="doSend()">Send</button>
+      <button class="refresh-btn" title="Refresh messages" onclick="loadMessages()">⟳</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:8000';
+  let token = null;
+  let me = null;
+
+  // ── helpers ──────────────────────────────────────────────────────
+  async function api(method, path, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(BASE + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    return data;
+  }
+
+  function showError(msg) {
+    document.getElementById('auth-error').textContent = msg;
+  }
+
+  // ── tabs ─────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('form-login').style.display    = isLogin ? '' : 'none';
+    document.getElementById('form-register').style.display = isLogin ? 'none' : '';
+    document.getElementById('tab-login').classList.toggle('active', isLogin);
+    document.getElementById('tab-register').classList.toggle('active', !isLogin);
+    showError('');
+  }
+
+  // ── auth ─────────────────────────────────────────────────────────
+  async function doLogin() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    showError('');
+    try {
+      const data = await api('POST', '/login', { username, password });
+      token = data.access_token;
+      me = username;
+      enterChat();
+    } catch (e) { showError(e.message); }
+  }
+
+  async function doRegister() {
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value;
+    showError('');
+    try {
+      await api('POST', '/register', { username, password });
+      switchTab('login');
+      document.getElementById('login-username').value = username;
+      showError(''); // clear
+      // small success hint
+      document.getElementById('auth-error').style.color = '#86efac';
+      document.getElementById('auth-error').textContent = 'Account created — please sign in.';
+    } catch (e) { showError(e.message); }
+  }
+
+  function doLogout() {
+    token = null; me = null;
+    document.getElementById('chat-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('auth-error').style.color = '#f87171';
+    showError('');
+  }
+
+  // ── chat ─────────────────────────────────────────────────────────
+  function enterChat() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('chat-screen').style.display = 'block';
+    document.getElementById('logged-as').textContent = `Signed in as ${me}`;
+    loadMessages();
+  }
+
+  async function loadMessages() {
+    try {
+      const msgs = await api('GET', '/messages');
+      renderMessages(msgs);
+    } catch (e) { /* silently ignore refresh errors */ }
+  }
+
+  function renderMessages(msgs) {
+    const area = document.getElementById('messages-area');
+    const empty = document.getElementById('empty-state');
+
+    if (!msgs.length) {
+      empty.style.display = '';
+      // remove old bubbles
+      area.querySelectorAll('.msg-bubble').forEach(n => n.remove());
+      return;
+    }
+
+    empty.style.display = 'none';
+    area.querySelectorAll('.msg-bubble').forEach(n => n.remove());
+
+    msgs.forEach(m => {
+      const div = document.createElement('div');
+      const isSent = m.sender === me;
+      div.className = `msg-bubble ${isSent ? 'sent' : 'received'}`;
+
+      const when = m.created_at
+        ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+      div.innerHTML = `
+        <div>${escapeHtml(m.content)}</div>
+        <div class="msg-meta">
+          ${isSent ? `To ${escapeHtml(m.recipient)}` : `From ${escapeHtml(m.sender)}`}
+          ${when ? ' · ' + when : ''}
+        </div>`;
+      area.insertBefore(div, empty);
+    });
+
+    area.scrollTop = area.scrollHeight;
+  }
+
+  async function doSend() {
+    const recipient = document.getElementById('recipient-input').value.trim();
+    const content   = document.getElementById('msg-input').value.trim();
+    if (!recipient || !content) return;
+
+    try {
+      const msg = await api('POST', '/messages', { recipient, content });
+      document.getElementById('msg-input').value = '';
+      // append optimistically then refresh
+      await loadMessages();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>

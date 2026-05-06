@@ -63,7 +63,8 @@ USEFUL PATTERN — how to save a new row:
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import User, Message, get_db
 from .schemas import (
@@ -82,40 +83,80 @@ router = APIRouter()
 # TODO 1 — Register a new user
 # ---------------------------------------------------------------------------
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
-    # your code here
-    pass
+async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.username == body.username))
+    existing = result.scalars().first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already taken")
+    user = User(username=body.username, password_hash=await hash_password(body.password))
+    db.add(user)
+    await db.commit()
+    log.info("Registered user: %s", body.username)
+    return {"message": "User registered successfully"}
 
 
 # ---------------------------------------------------------------------------
 # TODO 2 — Login and receive a JWT token
 # ---------------------------------------------------------------------------
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)):
-    # your code here
-    pass
+async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.username == body.username))
+    user = result.scalars().first()
+    if not user or not await verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    token = create_token(user.username)
+    log.info("Login: %s", user.username)
+    return TokenResponse(access_token=token)
 
 
 # ---------------------------------------------------------------------------
 # TODO 3 — Send a message (authenticated)
 # ---------------------------------------------------------------------------
 @router.post("/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-def send_message(
+async def send_message(
     body: SendMessageRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     username: str = Depends(require_auth),
 ):
-    # your code here
-    pass
+    msg = Message(
+        sender=username,
+        recipient=body.recipient,
+        ciphertext=encrypt(body.content),
+    )
+    db.add(msg)
+    await db.commit()
+    await db.refresh(msg)
+    log.info("Message from %s to %s", username, body.recipient)
+    return MessageResponse(
+        id=msg.id,
+        sender=msg.sender,
+        recipient=msg.recipient,
+        content=body.content,
+        created_at=msg.created_at,
+    )
 
 
 # ---------------------------------------------------------------------------
 # TODO 4 — Fetch messages (authenticated)
 # ---------------------------------------------------------------------------
 @router.get("/messages", response_model=list[MessageResponse])
-def get_messages(
-    db: Session = Depends(get_db),
+async def get_messages(
+    db: AsyncSession = Depends(get_db),
     username: str = Depends(require_auth),
 ):
-    # your code here
-    pass
+    result = await db.execute(
+        select(Message)
+        .where((Message.sender == username) | (Message.recipient == username))
+        .order_by(Message.created_at)
+    )
+    rows = result.scalars().all()
+    return [
+        MessageResponse(
+            id=row.id,
+            sender=row.sender,
+            recipient=row.recipient,
+            content=decrypt(row.ciphertext),
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
