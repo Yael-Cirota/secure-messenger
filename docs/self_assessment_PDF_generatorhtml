@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Assessment - PDF Attendance Report Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #e94560 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 30px;
+            background: white;
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+
+        .header h1 { font-size: 2.4em; margin-bottom: 10px; letter-spacing: 1px; }
+        .header .subtitle { font-size: 1.05em; opacity: 0.88; margin-top: 8px; }
+        .header .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-top: 12px;
+        }
+
+        .content { padding: 50px 40px 40px; }
+
+        /* ─── Instructions ─── */
+        .instructions {
+            background: linear-gradient(135deg, #f0f4ff, #fff);
+            border-left: 5px solid #0f3460;
+            padding: 22px 24px;
+            margin-bottom: 36px;
+            border-radius: 10px;
+        }
+        .instructions h2 { color: #0f3460; margin-bottom: 14px; font-size: 1.2em; }
+        .instructions ul { list-style: none; padding-left: 10px; }
+        .instructions li { margin: 7px 0; color: #333; display: flex; align-items: flex-start; gap: 8px; }
+        .instructions li::before { content: "✓"; color: #0f3460; font-weight: bold; flex-shrink: 0; margin-top: 2px; }
+
+        /* ─── Score key ─── */
+        .score-key {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #dde;
+        }
+        .score-key-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+        }
+        .key-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ─── Section ─── */
+        .section { margin-bottom: 44px; }
+
+        .section-title {
+            font-size: 1.65em;
+            color: #0f3460;
+            margin-bottom: 6px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e94560;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-weight {
+            font-size: 0.55em;
+            background: #e94560;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: normal;
+        }
+
+        .section-intro {
+            font-size: 0.95em;
+            color: #555;
+            margin: 8px 0 18px;
+            padding: 10px 14px;
+            background: #fafafa;
+            border-radius: 6px;
+            border-left: 3px solid #cdd;
+        }
+
+        .section-subtitle {
+            font-size: 1.15em;
+            color: #444;
+            margin: 22px 0 14px;
+            font-weight: 700;
+        }
+
+        /* ─── Grid ─── */
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .assessment-item {
+            background: #f9faff;
+            border: 1.5px solid #e0e4f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .assessment-item:hover {
+            box-shadow: 0 6px 18px rgba(15,52,96,0.14);
+            border-color: #0f3460;
+            transform: translateY(-2px);
+        }
+
+        /* colour the left strip by section colour via CSS vars */
+        .assessment-item::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 12px; bottom: 12px;
+            width: 4px;
+            border-radius: 2px;
+            background: var(--strip-color, #0f3460);
+        }
+
+        .assessment-title {
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        .max-points {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            font-size: 0.72em;
+            background: #f0f4ff;
+            color: #0f3460;
+            border: 1px solid #c0ccee;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* ─── Slider ─── */
+        .score-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .score-input input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e4f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .score-input input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0f3460, #533483);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+        .score-input input[type="range"]::-moz-range-thumb {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0f3460, #533483);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #0f3460, #533483);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            min-width: 52px;
+            text-align: center;
+            font-size: 1.05em;
+        }
+
+        /* colour score display dynamically via JS class */
+        .score-display.low    { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+        .score-display.medium { background: linear-gradient(135deg, #d68910, #f39c12); }
+        .score-display.high   { background: linear-gradient(135deg, #1e8449, #27ae60); }
+
+        .description {
+            font-size: 0.88em;
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.45;
+        }
+
+        .scale-description {
+            margin-top: 10px;
+            padding: 8px 10px;
+            background: #f0f4ff;
+            border-radius: 6px;
+            font-size: 0.82em;
+            color: #555;
+        }
+        .scale-description strong { color: #0f3460; }
+
+        /* ─── Good-practice tip ─── */
+        .tip-box {
+            background: #f0fff4;
+            border-left: 4px solid #27ae60;
+            padding: 10px 14px;
+            margin-top: 10px;
+            border-radius: 6px;
+            font-size: 0.83em;
+            color: #1e4d2b;
+        }
+        .tip-box strong { color: #1e8449; }
+
+        /* ─── Anti-pattern warning ─── */
+        .anti-pattern {
+            background: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            padding: 10px 14px;
+            margin-top: 10px;
+            border-radius: 6px;
+            font-size: 0.83em;
+            color: #6b1a1a;
+        }
+        .anti-pattern strong { color: #c0392b; }
+
+        /* ─── Text inputs ─── */
+        .text-input-section { margin: 18px 0; }
+        .text-input-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .text-input-section textarea,
+        .text-input-section input[type="text"],
+        .text-input-section input[type="number"],
+        .text-input-section select {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #dde;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .text-input-section textarea { min-height: 90px; }
+        .text-input-section textarea:focus,
+        .text-input-section input:focus,
+        .text-input-section select:focus {
+            outline: none;
+            border-color: #0f3460;
+            box-shadow: 0 0 0 3px rgba(15,52,96,0.1);
+        }
+
+        /* ─── Code review section ─── */
+        .highlight-box {
+            background: linear-gradient(135deg, #fff9e6, #fffbf0);
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+        .highlight-box h3 { color: #b7770d; margin-bottom: 12px; font-size: 1.1em; }
+        .highlight-box .sub-note {
+            font-size: 0.85em;
+            color: #856404;
+            margin-top: 6px;
+        }
+
+        /* ─── Bonus section ─── */
+        .bonus-section {
+            background: linear-gradient(135deg, #fef9ff, #f3e5ff);
+            border: 2px solid #9b59b6;
+            border-radius: 12px;
+            padding: 26px;
+            margin-bottom: 30px;
+        }
+        .bonus-section h2 { color: #6c3483; margin-bottom: 18px; }
+        .bonus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .bonus-item {
+            background: white;
+            border: 1.5px solid #d7bde2;
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.2s;
+        }
+        .bonus-item:hover {
+            border-color: #9b59b6;
+            box-shadow: 0 4px 12px rgba(155,89,182,0.15);
+        }
+        .bonus-item-title { font-weight: 700; color: #6c3483; margin-bottom: 8px; }
+        .bonus-points-badge {
+            display: inline-block;
+            background: #9b59b6;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .bonus-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #d7bde2;
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 0.95em;
+            background: #fef9ff;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .bonus-select:focus { outline: none; border-color: #9b59b6; }
+
+        /* ─── Summary ─── */
+        .summary-section {
+            background: linear-gradient(135deg, #0f3460 0%, #533483 60%, #e94560 100%);
+            color: white;
+            padding: 34px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }
+        .summary-section h2 { color: white; margin-bottom: 20px; font-size: 1.4em; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .summary-item {
+            background: rgba(255,255,255,0.12);
+            padding: 18px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+        .summary-item.final-score {
+            background: rgba(255,255,255,0.22);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .summary-label { font-size: 0.82em; opacity: 0.88; margin-bottom: 8px; }
+        .summary-value { font-size: 2.1em; font-weight: bold; }
+        .summary-value.final { font-size: 2.6em; color: #ffd700; }
+
+        .summary-bar {
+            margin-top: 18px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            height: 16px;
+            overflow: hidden;
+        }
+        .summary-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffaa00);
+            border-radius: 8px;
+            transition: width 0.6s ease;
+        }
+
+        .bonus-display {
+            margin-top: 16px;
+            padding: 14px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        /* ─── Buttons ─── */
+        .buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 14px 36px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.25s ease;
+            letter-spacing: 0.3px;
+        }
+        .btn-copy { background: #27ae60; color: white; }
+        .btn-copy:hover { background: #1e8449; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(39,174,96,0.4); }
+        .btn-calculate { background: linear-gradient(135deg, #0f3460, #533483); color: white; }
+        .btn-calculate:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(15,52,96,0.4); }
+        .btn-reset { background: #e74c3c; color: white; }
+        .btn-reset:hover { background: #c0392b; transform: translateY(-2px); }
+
+        /* ─── Copy notification ─── */
+        .copy-notification {
+            position: fixed;
+            top: 20px; right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 16px 22px;
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-weight: 700;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        /* ─── Warning / note ─── */
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 14px;
+            margin: 14px 0;
+            border-radius: 6px;
+            color: #856404;
+            font-size: 0.95em;
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            background: #1a1a2e;
+            color: #aaa;
+            padding: 22px;
+            text-align: center;
+            font-size: 0.88em;
+        }
+        .footer a { color: #7f8de8; text-decoration: none; }
+
+        /* ─── Pedagogy highlight ─── */
+        .pedagogy-note {
+            background: linear-gradient(135deg, #e8f8ff, #f0fff4);
+            border: 1.5px solid #85c1e9;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            font-size: 0.92em;
+            color: #1a4a6e;
+        }
+        .pedagogy-note strong { color: #1a6ea4; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .content { padding: 22px 16px; }
+            .header h1 { font-size: 1.7em; }
+            .assessment-grid { grid-template-columns: 1fr; }
+            .buttons { flex-direction: column; }
+            .section-title { flex-direction: column; align-items: flex-start; gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <div class="header">
+        <h1>🎓 Self-Assessment</h1>
+        <div class="subtitle">Project: PDF Attendance Report Generator | Python | Design Patterns | DevOps</div>
+        <div class="version-badge">Version 2.0 — Scoring: 100 + Bonuses</div>
+    </div>
+
+    <div class="content">
+
+        <!-- ═══════════ INSTRUCTIONS ═══════════ -->
+        <div class="instructions">
+            <h2>📋 Form Instructions</h2>
+            <ul>
+                <li>The form is divided into 4 main categories — total <strong>100 points</strong></li>
+                <li>Each category has a different weight in the final score (shown next to each heading)</li>
+                <li>For each criterion: move the slider based on what you actually implemented in practice</li>
+                <li>You can earn <strong>up to 15 bonus points</strong> for code review, time management, and best practices</li>
+                <li>At the end: click <strong>"Calculate Score"</strong> then <strong>"Copy to Clipboard"</strong> and send to the instructor</li>
+            </ul>
+            <div class="score-key">
+                <div class="score-key-item"><div class="key-dot" style="background:#e74c3c"></div> 0–39: Not implemented / Missing</div>
+                <div class="score-key-item"><div class="key-dot" style="background:#f39c12"></div> 40–69: Partially implemented</div>
+                <div class="score-key-item"><div class="key-dot" style="background:#27ae60"></div> 70–100: Well implemented</div>
+            </div>
+        </div>
+
+        <div class="pedagogy-note">
+            💡 <strong>Pedagogical tip:</strong> The self-assessment isn't just a grade — it's a tool to reflect on what you did and why.
+            Write honest notes: what was a deliberate decision? What was a compromise? What would you do differently?
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 1: ARCHITECTURE  — 25 pts
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                1️⃣ Architecture & Design
+                <span class="section-weight">25 Points</span>
+            </h2>
+            <div class="section-intro">
+                Is the project divided into clear layers? Does each layer only know what it needs?
+                Good structure allows you to change one part without breaking the rest.
+            </div>
+
+            <div class="assessment-grid">
+
+                <div class="assessment-item" style="--strip-color: #0f3460">
+                    <div class="max-points">Up to 8 pts</div>
+                    <div class="assessment-title">📐 Layering</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="layering" data-weight="8">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Is the project divided into domain / application / infrastructure / CLI?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> All code in one file |
+                        <strong>50:</strong> Partial and inconsistent separation |
+                        <strong>100:</strong> Clean Architecture — each layer is independent
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Best practice:</strong> The domain layer imports nothing from infrastructure.
+                        Dependencies flow <em>inward</em> only.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #0f3460">
+                    <div class="max-points">Up to 10 pts</div>
+                    <div class="assessment-title">🔌 Dependency Injection (DI)</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="dependency_injection" data-weight="10">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Is all wiring done in one place (composition root)?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Direct instantiation everywhere |
+                        <strong>50:</strong> Partial DI (some replaced, some direct) |
+                        <strong>100:</strong> Central Container — main.py doesn't know <em>how</em> to build a service
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Anti-pattern:</strong> <code>service = TransformationService(StrategyA())</code> inside main()
+                        — that's direct coupling. Move it to a container.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #0f3460">
+                    <div class="max-points">Up to 7 pts</div>
+                    <div class="assessment-title">🏗️ File & Folder Structure</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="project_structure" data-weight="7">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Can you navigate the project without reading code?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Everything in root |
+                        <strong>50:</strong> Structure exists but inconsistent |
+                        <strong>100:</strong> <code>src/domain, src/app, src/infra, tests/unit, tests/integration</code>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-input-section">
+                <label>📝 Architecture notes — explain your decisions:</label>
+                <textarea id="arch_notes" placeholder="e.g.: We chose Clean Architecture because... / We couldn't implement a DI container because..."></textarea>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 2: DESIGN PATTERNS  — 30 pts
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                2️⃣ Design Patterns
+                <span class="section-weight">30 Points</span>
+            </h2>
+            <div class="section-intro">
+                The core of the project relies on classic patterns taught in class:
+                Strategy, Factory, Template Method, Decorator, Observer, Registry.
+                The emphasis is on <strong>correct and clear usage</strong>, not quantity.
+            </div>
+
+            <div class="assessment-grid">
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 6 pts</div>
+                    <div class="assessment-title">🎯 Strategy Pattern</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="strategy" data-weight="6">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Clear interface + separate implementations for Type-A and Type-B?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> None / direct if-else |
+                        <strong>50:</strong> Strategy exists but not extensible |
+                        <strong>100:</strong> Adding Type-C requires only a new class, no changes to existing code
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Open/Closed:</strong> If adding a new variant requires opening an existing file — it's not a real strategy.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 4 pts</div>
+                    <div class="assessment-title">🏭 Factory Pattern</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="factory" data-weight="4">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        ParserFactory / StrategyFactory returns the correct instance/class by type?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No factory |
+                        <strong>50:</strong> Basic factory |
+                        <strong>100:</strong> Factory with registry — can add a type in 1 line
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Common anti-pattern:</strong> Factory that returns an instance instead of a class.
+                        Factory should <em>create</em>, not <em>store</em>.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 4 pts</div>
+                    <div class="assessment-title">📋 Template Method</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="template_method" data-weight="4">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        BaseParser with an action skeleton + abstract methods that subclasses fill in?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Each parser is completely independent |
+                        <strong>50:</strong> Base class exists but no @abstractmethod |
+                        <strong>100:</strong> ABC + abstractmethod + clear where each subclass differs
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 7 pts</div>
+                    <div class="assessment-title">🎁 Decorator Pattern</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="decorator" data-weight="7">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        ValidatingStrategyDecorator wraps a strategy without modifying it?
+                        <br>Decorator must implement the <strong>same interface</strong> as the strategy.
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No Decorator |
+                        <strong>50:</strong> Decorator exists but doesn't wrap correctly |
+                        <strong>100:</strong> Can wrap another decorator without touching the strategy
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Best practice:</strong> <code>ValidatingDecorator(strategy)</code> — the decorator doesn't know
+                        if the strategy is TypeA, TypeB, or another decorator.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 6 pts</div>
+                    <div class="assessment-title">👀 Observer Pattern</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="observer" data-weight="6">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Does TransformationService notify observers about events?
+                        <br>LoggingObserver, ValidationObserver — <em>without coupling</em>.
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No observer — logging directly everywhere |
+                        <strong>50:</strong> Partial / too coupled observer |
+                        <strong>100:</strong> Observers list in constructor — adding an observer without changing the service
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Anti-pattern:</strong> <code>print(f"transformed {row}")</code> inside strategy —
+                        that's coupling. The service shouldn't know who's listening.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #533483">
+                    <div class="max-points">Up to 3 pts</div>
+                    <div class="assessment-title">📦 Registry Pattern</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="registry" data-weight="3">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        RULES_REGISTRY / strategy_registry — a central and flexible store?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> None / if-else by name |
+                        <strong>50:</strong> Small dict |
+                        <strong>100:</strong> Full registry with lookup and fallback
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-input-section">
+                <label>📝 Design patterns notes — which patterns did you implement, where did you choose not to and why:</label>
+                <textarea id="patterns_notes" placeholder="e.g.: We didn't implement Observer because... / Our Decorator truly implements the interface..."></textarea>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 3: CODE QUALITY  — 25 pts
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                3️⃣ Code Quality & Engineering Maturity
+                <span class="section-weight">25 Points</span>
+            </h2>
+            <div class="section-intro">
+                Good code is code you can read, test, and change without being afraid.
+                This section checks: type safety, immutability, determinism, exception hygiene, and configuration management.
+            </div>
+
+            <div class="assessment-grid">
+
+                <div class="assessment-item" style="--strip-color: #e94560">
+                    <div class="max-points">Up to 5 pts</div>
+                    <div class="assessment-title">🔤 Type Hints</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="type_hints" data-weight="5">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Are <em>all</em> signatures annotated? Including return types?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No type hints |
+                        <strong>50:</strong> Some functions annotated |
+                        <strong>100:</strong> 100% — including generics, <code>Optional</code>, <code>Union</code>
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Best practice:</strong> Run <code>mypy --strict</code> — if it passes, that's 100.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #e94560">
+                    <div class="max-points">Up to 6 pts</div>
+                    <div class="assessment-title">❄️ Immutable Dataclasses (frozen=True)</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="immutable_dc" data-weight="6">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Are all domain models and DTOs <code>@dataclass(frozen=True)</code>?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Regular @dataclass — can be mutated after creation |
+                        <strong>50:</strong> Some are frozen |
+                        <strong>100:</strong> All DTOs frozen — mutation = <code>TypeError</code> at runtime
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Common anti-pattern (83% of projects!):</strong>
+                        <code>@dataclass</code> without <code>frozen=True</code> — data changes unintentionally.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #e94560">
+                    <div class="max-points">Up to 5 pts</div>
+                    <div class="assessment-title">🎲 Deterministic Randomness</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="deterministic" data-weight="5">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Same run on same input → always the same result?
+                        <br>Seed by date / row ID.
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No randomness at all / always different |
+                        <strong>50:</strong> One global seed |
+                        <strong>100:</strong> Seed <em>per row/date</em> — testable in unit tests
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Best practice:</strong>
+                        <code>random.seed(row.date.day + row.date.month*100)</code> —
+                        each row is reproducible and independent.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #e94560">
+                    <div class="max-points">Up to 4 pts</div>
+                    <div class="assessment-title">⚡ Custom Exception Hierarchy</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="exceptions" data-weight="4">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Is there a clear hierarchy? Do error messages contain context?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> <code>raise Exception("error")</code> |
+                        <strong>50:</strong> Some exceptions but no hierarchy |
+                        <strong>100:</strong> <code>BaseError → ParseError, ValidationError, OutputError</code>
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #e94560">
+                    <div class="max-points">Up to 5 pts</div>
+                    <div class="assessment-title">⚙️ Configuration Management</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="config_mgmt" data-weight="5">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Are all thresholds, ranges, and rules in one file?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Hardcoded in every file |
+                        <strong>50:</strong> Config exists but partial |
+                        <strong>100:</strong> Frozen <code>RulesPerVariant</code> in <code>config/rules.py</code>
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Common anti-pattern:</strong>
+                        <code>VALID_ENTRY_RANGE = (5, 11)</code> in <code>validating_decorator.py</code> —
+                        changing one rule requires searching all code.
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-input-section">
+                <label>📝 Code quality notes — what would you do differently?</label>
+                <textarea id="code_quality_notes" placeholder="e.g.: We knew we needed frozen dataclasses but... / We couldn't implement determinism because..."></textarea>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 4: TESTING & DEVOPS  — 20 pts
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                4️⃣ Testing & DevOps
+                <span class="section-weight">20 Points</span>
+            </h2>
+            <div class="section-intro">
+                Code without tests is code you don't trust.
+                Docker is not "nice to have" — it's part of the requirements (system dependencies!).
+            </div>
+
+            <div class="assessment-grid">
+
+                <div class="assessment-item" style="--strip-color: #27ae60">
+                    <div class="max-points">Up to 6 pts</div>
+                    <div class="assessment-title">🧪 Unit Tests</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="unit_tests" data-weight="6">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Tests for units: parsers, strategies, decorators, validators.
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No tests |
+                        <strong>50:</strong> 1–3 test files |
+                        <strong>100:</strong> Every unit tested + edge cases + coverage > 80%
+                    </div>
+                    <div class="tip-box">
+                        <strong>✓ Best practice:</strong> Deterministic randomness lets you test that variation X of row Y
+                        is always Z. Without seeding — you can't write a unit test for transformation!
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #27ae60">
+                    <div class="max-points">Up to 4 pts</div>
+                    <div class="assessment-title">🔗 Integration Tests</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="integration_tests" data-weight="4">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Testing the whole pipeline: PDF input → PDF output.
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No integration tests |
+                        <strong>50:</strong> Manual testing / script |
+                        <strong>100:</strong> <code>tests/integration/</code> with fixture PDFs
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #27ae60">
+                    <div class="max-points">Up to 5 pts</div>
+                    <div class="assessment-title">🐳 Docker</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="docker" data-weight="5">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Valid Dockerfile with all system dependencies?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No Dockerfile |
+                        <strong>50:</strong> Basic Dockerfile / doesn't work |
+                        <strong>100:</strong> Contains <code>tesseract, poppler</code> + <code>.dockerignore</code> + multi-stage
+                    </div>
+                    <div class="warning">
+                        ⚠ Without Docker the project cannot run in an external environment — this is a requirement.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #27ae60">
+                    <div class="max-points">Up to 3 pts</div>
+                    <div class="assessment-title">🖥️ CLI (argparse)</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="cli" data-weight="3">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Can run with <code>--help</code>? Arguments explained?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> Direct <code>sys.argv[1]</code> |
+                        <strong>50:</strong> Basic argparse |
+                        <strong>100:</strong> description, metavar, required/optional, --seed, etc.
+                    </div>
+                    <div class="anti-pattern">
+                        <strong>⚠ Anti-pattern:</strong>
+                        <code>args = sys.argv[1:]; if "-o" in args: idx = args.index("-o")</code> —
+                        manual CLI handling. Use <code>argparse</code>.
+                    </div>
+                </div>
+
+                <div class="assessment-item" style="--strip-color: #27ae60">
+                    <div class="max-points">Up to 2 pts</div>
+                    <div class="assessment-title">📦 pyproject.toml</div>
+                    <div class="score-input">
+                        <input type="range" min="0" max="100" value="50" class="score-slider" data-key="pyproject" data-weight="2">
+                        <span class="score-display">50</span>
+                    </div>
+                    <div class="description">
+                        Modern Python project with build system?
+                    </div>
+                    <div class="scale-description">
+                        <strong>0:</strong> No pyproject.toml |
+                        <strong>50:</strong> setup.py only |
+                        <strong>100:</strong> pyproject.toml with [project], [build-system], [tool.pytest]
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-input-section">
+                <label>📝 Testing & DevOps notes:</label>
+                <textarea id="testing_notes" placeholder="e.g.: We wrote X test files / Docker works but we didn't test multi-stage / No integration tests because..."></textarea>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 5: UNIFIED MODEL
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                5️⃣ Unified Model for Both Report Types
+                <span class="section-weight">Included in sections above</span>
+            </h2>
+            <div class="section-intro">
+                One of the central challenges: two report types (Type A, Type B) that are very different from each other.
+                The correct solution — a single internal model that everyone works with, and only the parser and generator are type-specific.
+            </div>
+            <div class="pedagogy-note">
+                💡 Ask yourself: if we add a third report type, how many new files need to be created?
+                How many existing files need to change?<br>
+                <strong>Ideal answer:</strong> Create a new parser + new strategy. Change nothing else.
+            </div>
+
+            <div class="text-input-section">
+                <label>📝 Did you succeed in unifying both types into a shared model? Describe how:</label>
+                <textarea id="unified_model_notes" placeholder="e.g.: We created an AttendanceRow dataclass containing all shared fields... / Each parser normalizes to the same format..."></textarea>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SECTION 6: CODE REVIEW + HOURS
+        ═══════════════════════════════════════════ -->
+        <div class="section">
+            <h2 class="section-title">
+                6️⃣ Time Management, Process & Collaboration
+                <span class="section-weight">— (Included in bonuses)</span>
+            </h2>
+
+            <div class="highlight-box">
+                <h3>🔍 Code Review — A central part of the real work world</h3>
+                <p>
+                    In real-world software, all code goes through code review before merge.
+                    It's a tool for learning, finding bugs, and spreading knowledge across the team.
+                    In this project: performing code review = bonus + experience.
+                </p>
+            </div>
+
+            <div class="two-col-grid">
+                <div class="text-input-section">
+                    <label>👥 Did you do a Code Review for another group's project?</label>
+                    <select id="code_review_done">
+                        <option value="no">No — we didn't do a code review</option>
+                        <option value="partial">Partial — we gave basic feedback</option>
+                        <option value="yes">Yes — detailed code review with comments</option>
+                    </select>
+                    <div class="description" style="margin-top:8px">
+                        Did you give specific comments on code? Found issues? Suggested improvements?
+                    </div>
+                </div>
+
+                <div class="text-input-section">
+                    <label>👥 Did you receive a Code Review from another group?</label>
+                    <select id="code_review_received">
+                        <option value="no">No — we didn't receive a review</option>
+                        <option value="partial">Partial — we received general feedback</option>
+                        <option value="yes">Yes — we received detailed feedback</option>
+                    </select>
+                    <div class="description" style="margin-top:8px">
+                        Did you receive specific comments? Did you improve code based on them?
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-input-section">
+                <label>💬 What was the content of the Code Review you gave? (technical)</label>
+                <textarea id="your_feedback" placeholder="e.g.: We found that the factory returns an instance instead of a class... / We noted that the dataclass isn't frozen..."></textarea>
+            </div>
+
+            <div class="text-input-section">
+                <label>💬 What did you receive back? Did you improve anything?</label>
+                <textarea id="peer_feedback" placeholder="e.g.: They told us the DI wasn't correct, we fixed it to container pattern..."></textarea>
+            </div>
+
+            <div class="text-input-section">
+                <label>⏱️ How many work hours did you invest in the project (coding + debugging + testing + docs)?</label>
+                <input type="number" id="hours_spent" min="1" max="500" value="40" placeholder="Hours">
+                <div class="description" style="margin-top:8px">
+                    Hours are used to understand the effort — not as a "grade." There's no "wrong" answer, be honest.
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             BONUS SECTION
+        ═══════════════════════════════════════════ -->
+        <div class="bonus-section">
+            <h2>🎁 Bonuses — Up to 15 extra points</h2>
+            <p style="margin-bottom: 16px; opacity: 0.85; font-size: 0.95em;">
+                Bonuses add to the base 100. Final score can exceed 100 — up to 115.
+            </p>
+
+            <div class="bonus-grid">
+
+                <div class="bonus-item">
+                    <div class="bonus-item-title">🔍 Code Review You Gave</div>
+                    <div class="bonus-points-badge">Up to +5 pts</div>
+                    <div class="description" style="margin-bottom: 10px;">
+                        Deep code review of a peer's project — looking for real issues, not just "looks good."
+                    </div>
+                    <select class="bonus-select" id="bonus_review_given">
+                        <option value="0">We didn't — 0 pts</option>
+                        <option value="2">Partial (general feedback) — +2 pts</option>
+                        <option value="4">Good (found specific issues) — +4 pts</option>
+                        <option value="5">In-depth (technical comments, code suggestions) — +5 pts</option>
+                    </select>
+                </div>
+
+                <div class="bonus-item">
+                    <div class="bonus-item-title">📥 Code Review You Received</div>
+                    <div class="bonus-points-badge">Up to +5 pts</div>
+                    <div class="description" style="margin-bottom: 10px;">
+                        Received a deep review + improved code based on it.
+                    </div>
+                    <select class="bonus-select" id="bonus_review_received">
+                        <option value="0">We didn't receive — 0 pts</option>
+                        <option value="2">Received (didn't improve) — +2 pts</option>
+                        <option value="4">Received and partially improved — +4 pts</option>
+                        <option value="5">Received, improved, learned — +5 pts</option>
+                    </select>
+                </div>
+
+                <div class="bonus-item">
+                    <div class="bonus-item-title">🧊 Frozen Dataclasses Throughout Project</div>
+                    <div class="bonus-points-badge">Up to +2 pts</div>
+                    <div class="description" style="margin-bottom: 10px;">
+                        <em>All</em> domain objects are <code>frozen=True</code> — no exceptions.
+                    </div>
+                    <select class="bonus-select" id="bonus_frozen">
+                        <option value="0">No — 0 pts</option>
+                        <option value="1">Partially — +1 pt</option>
+                        <option value="2">Fully — +2 pts</option>
+                    </select>
+                </div>
+
+                <div class="bonus-item">
+                    <div class="bonus-item-title">🎲 Deterministic Seed Per Row</div>
+                    <div class="bonus-points-badge">Up to +2 pts</div>
+                    <div class="description" style="margin-bottom: 10px;">
+                        Seed depends on date/row — can write a unit test that verifies a specific variation.
+                    </div>
+                    <select class="bonus-select" id="bonus_seed">
+                        <option value="0">No — 0 pts</option>
+                        <option value="1">Global seed — +1 pt</option>
+                        <option value="2">Seed per row/date — +2 pts</option>
+                    </select>
+                </div>
+
+                <div class="bonus-item">
+                    <div class="bonus-item-title">🏆 Full DI Container</div>
+                    <div class="bonus-points-badge">Up to +1 pt</div>
+                    <div class="description" style="margin-bottom: 10px;">
+                        <code>Container</code> class with composition root — main.py doesn't know <em>how</em> to build.
+                    </div>
+                    <select class="bonus-select" id="bonus_di">
+                        <option value="0">No — 0 pts</option>
+                        <option value="1">Yes — +1 pt</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             SUMMARY
+        ═══════════════════════════════════════════ -->
+        <div class="summary-section">
+            <h2>📊 Score Summary</h2>
+
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">📐 Architecture (25)</div>
+                    <div class="summary-value" id="arch-score">--</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">🎯 Patterns (30)</div>
+                    <div class="summary-value" id="patterns-score">--</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">🔤 Code Quality (25)</div>
+                    <div class="summary-value" id="quality-score">--</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">🧪 Testing & DevOps (20)</div>
+                    <div class="summary-value" id="testing-score">--</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">🎁 Bonuses</div>
+                    <div class="summary-value" id="bonus-score">--</div>
+                </div>
+                <div class="summary-item final-score">
+                    <div class="summary-label">🏆 Final Score</div>
+                    <div class="summary-value final" id="final-score">--</div>
+                </div>
+            </div>
+
+            <div class="summary-bar" style="margin-top: 20px;">
+                <div class="summary-bar-fill" id="score-bar" style="width: 50%"></div>
+            </div>
+
+            <div class="bonus-display" id="bonus-breakdown">
+                Click "Calculate Score" for bonus breakdown
+            </div>
+
+            <div style="margin-top: 16px; padding: 14px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9em;">
+                <p>⏱️ <strong>Work hours:</strong> Affected by preparation — a project in 10 hours and a project in 60 hours are expressed differently.</p>
+                <p style="margin-top: 8px;">📋 <strong>Submission:</strong> Click "Copy to Clipboard" and send the text to the instructor.</p>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn-calculate" onclick="calculateScores()">🔄 Calculate Score</button>
+            <button class="btn-copy" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+            <button class="btn-reset" onclick="resetForm()">🗑️ Reset</button>
+        </div>
+
+    </div><!-- /content -->
+
+    <div class="footer">
+        <p>© 2026 — Self-Assessment for PDF Attendance Report Generator Project</p>
+        <p style="margin-top: 6px;">💡 Save a copy before closing the page — data is not saved automatically.</p>
+    </div>
+
+</div><!-- /container -->
+
+<div class="copy-notification" id="copyNotification">
+    ✓ Copied to clipboard successfully!
+</div>
+
+<style>
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 768px) {
+        .two-col-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<script>
+    // ─── Config: which keys belong to which section, and each key's max weight ───
+    const SECTION_CONFIG = {
+        architecture: {
+            label: 'Architecture',
+            maxPoints: 25,
+            keys: ['layering', 'dependency_injection', 'project_structure']
+        },
+        patterns: {
+            label: 'Design Patterns',
+            maxPoints: 30,
+            keys: ['strategy', 'factory', 'template_method', 'decorator', 'observer', 'registry']
+        },
+        code_quality: {
+            label: 'Code Quality',
+            maxPoints: 25,
+            keys: ['type_hints', 'immutable_dc', 'deterministic', 'exceptions', 'config_mgmt']
+        },
+        testing: {
+            label: 'Testing & DevOps',
+            maxPoints: 20,
+            keys: ['unit_tests', 'integration_tests', 'docker', 'cli', 'pyproject']
+        }
+    };
+
+    const SECTION_DISPLAY_IDS = {
+        architecture: 'arch-score',
+        patterns: 'patterns-score',
+        code_quality: 'quality-score',
+        testing: 'testing-score'
+    };
+
+    // ─── Collect slider weights from data-weight attribute ───
+    function getSliderWeights() {
+        const weights = {};
+        document.querySelectorAll('.score-slider').forEach(s => {
+            weights[s.dataset.key] = parseInt(s.dataset.weight) || 10;
+        });
+        return weights;
+    }
+
+    // ─── Colour the score display pill ───
+    function colorDisplay(el, val) {
+        el.classList.remove('low', 'medium', 'high');
+        if (val < 40)       el.classList.add('low');
+        else if (val < 70)  el.classList.add('medium');
+        else                el.classList.add('high');
+    }
+
+    // ─── Wire up sliders ───
+    document.querySelectorAll('.score-slider').forEach(slider => {
+        slider.addEventListener('input', function () {
+            const display = this.nextElementSibling;
+            display.textContent = this.value;
+            colorDisplay(display, parseInt(this.value));
+            calculateScores();
+        });
+    });
+
+    // ─── Wire up bonus selects ───
+    document.querySelectorAll('.bonus-select').forEach(sel => {
+        sel.addEventListener('change', calculateScores);
+    });
+
+    // ─── Main scoring calculation ───
+    function calculateScores() {
+        const weights = getSliderWeights();
+        const sectionTotals = {};
+
+        Object.entries(SECTION_CONFIG).forEach(([sectionId, cfg]) => {
+            let earned = 0;
+            let maxPossible = 0;
+
+            cfg.keys.forEach(key => {
+                const slider = document.querySelector(`.score-slider[data-key="${key}"]`);
+                if (!slider) return;
+                const sliderVal = parseInt(slider.value) / 100;   // 0–1
+                const keyWeight = weights[key] || 10;
+                earned += sliderVal * keyWeight;
+                maxPossible += keyWeight;
+            });
+
+            // Scale earned to section max points
+            const sectionScore = maxPossible > 0
+                ? Math.round((earned / maxPossible) * cfg.maxPoints)
+                : 0;
+
+            sectionTotals[sectionId] = sectionScore;
+            const el = document.getElementById(SECTION_DISPLAY_IDS[sectionId]);
+            if (el) el.textContent = sectionScore + '/' + cfg.maxPoints;
+        });
+
+        // Base score (sum of sections = 100)
+        const baseScore = Object.values(sectionTotals).reduce((a, b) => a + b, 0);
+
+        // Bonus
+        const bonusGiven    = parseInt(document.getElementById('bonus_review_given').value)    || 0;
+        const bonusReceived = parseInt(document.getElementById('bonus_review_received').value) || 0;
+        const bonusFrozen   = parseInt(document.getElementById('bonus_frozen').value)          || 0;
+        const bonusSeed     = parseInt(document.getElementById('bonus_seed').value)            || 0;
+        const bonusDI       = parseInt(document.getElementById('bonus_di').value)              || 0;
+        const totalBonus    = bonusGiven + bonusReceived + bonusFrozen + bonusSeed + bonusDI;
+
+        const finalScore = Math.min(115, baseScore + totalBonus);
+
+        document.getElementById('bonus-score').textContent = '+' + totalBonus;
+        document.getElementById('final-score').textContent = finalScore;
+        document.getElementById('score-bar').style.width = Math.min(100, finalScore) + '%';
+
+        let bonusText = '🎁 Bonus breakdown: ';
+        const parts = [];
+        if (bonusGiven > 0)    parts.push(`Code Review given: +${bonusGiven}`);
+        if (bonusReceived > 0) parts.push(`Code Review received: +${bonusReceived}`);
+        if (bonusFrozen > 0)   parts.push(`Frozen dataclasses: +${bonusFrozen}`);
+        if (bonusSeed > 0)     parts.push(`Deterministic seed: +${bonusSeed}`);
+        if (bonusDI > 0)       parts.push(`DI Container: +${bonusDI}`);
+        bonusText += parts.length > 0 ? parts.join(' | ') : 'No bonuses yet';
+        document.getElementById('bonus-breakdown').textContent = bonusText;
+
+        return { sectionTotals, baseScore, totalBonus, finalScore };
+    }
+
+    // ─── Copy to clipboard ───
+    function copyToClipboard() {
+        const result = calculateScores();
+        const hours = parseInt(document.getElementById('hours_spent').value) || 0;
+
+        const scores = {};
+        document.querySelectorAll('.score-slider').forEach(s => {
+            scores[s.dataset.key] = parseInt(s.value);
+        });
+
+        const crGiven    = document.getElementById('code_review_done').value;
+        const crReceived = document.getElementById('code_review_received').value;
+
+        const bonusLabels = {
+            bonus_review_given:    'Code Review Given',
+            bonus_review_received: 'Code Review Received',
+            bonus_frozen:          'Frozen Dataclasses',
+            bonus_seed:            'Deterministic Seed',
+            bonus_di:              'DI Container'
+        };
+
+        let bonusLines = '';
+        Object.entries(bonusLabels).forEach(([id, label]) => {
+            const val = parseInt(document.getElementById(id).value) || 0;
+            if (val > 0) bonusLines += `  ${label}: +${val}\n`;
+        });
+        if (!bonusLines) bonusLines = '  No bonuses\n';
+
+        const scoreLines = Object.entries(SECTION_CONFIG).map(([sectionId, cfg]) => {
+            const sc = result.sectionTotals[sectionId];
+            return `  ${cfg.label}: ${sc}/${cfg.maxPoints}`;
+        }).join('\n');
+
+        const detailLines = Object.entries(scores).map(([key, val]) => {
+            return `  ${key.toUpperCase().replace(/_/g, ' ')}: ${val}/100`;
+        }).join('\n');
+
+        const text = `
+╔═══════════════════════════════════════════════════════════╗
+║   Self-Assessment — PDF Attendance Report Generator
+║   Python | Design Patterns | DevOps
+╚═══════════════════════════════════════════════════════════╝
+
+📊 Category Scores (out of 100):
+───────────────────────────────────────────────────────────
+${scoreLines}
+
+📦 Detailed Scores (slider 0–100 per criterion):
+───────────────────────────────────────────────────────────
+${detailLines}
+
+🎁 Bonuses:
+───────────────────────────────────────────────────────────
+${bonusLines}
+──── Base Score:  ${result.baseScore}/100
+──── Bonuses:     +${result.totalBonus}
+🏆 FINAL SCORE:  ${result.finalScore}/115
+
+🤝 Code Review:
+───────────────────────────────────────────────────────────
+  Review given:     ${crGiven}
+  Review received:  ${crReceived}
+
+⏱️  Work hours: ${hours} hours
+
+📝 Notes:
+───────────────────────────────────────────────────────────
+Architecture:
+${document.getElementById('arch_notes').value || '(no notes)'}
+
+Design Patterns:
+${document.getElementById('patterns_notes').value || '(no notes)'}
+
+Code Quality:
+${document.getElementById('code_quality_notes').value || '(no notes)'}
+
+Testing & DevOps:
+${document.getElementById('testing_notes').value || '(no notes)'}
+
+Unified Model:
+${document.getElementById('unified_model_notes').value || '(no notes)'}
+
+Code Review Given:
+${document.getElementById('your_feedback').value || '(none)'}
+
+Code Review Received:
+${document.getElementById('peer_feedback').value || '(none)'}
+
+╔═══════════════════════════════════════════════════════════╗
+Submission date: ${new Date().toLocaleString('en-US')}
+╚═══════════════════════════════════════════════════════════╝
+        `.trim();
+
+        navigator.clipboard.writeText(text).then(() => {
+            const n = document.getElementById('copyNotification');
+            n.style.display = 'block';
+            setTimeout(() => { n.style.display = 'none'; }, 2800);
+        }).catch(err => alert('Copy error: ' + err));
+    }
+
+    // ─── Reset ───
+    function resetForm() {
+        if (!confirm('Reset the entire form?')) return;
+        document.querySelectorAll('.score-slider').forEach(s => {
+            s.value = 50;
+            const d = s.nextElementSibling;
+            d.textContent = '50';
+            colorDisplay(d, 50);
+        });
+        document.querySelectorAll('textarea').forEach(t => t.value = '');
+        document.getElementById('hours_spent').value = '40';
+        document.getElementById('code_review_done').value = 'no';
+        document.getElementById('code_review_received').value = 'no';
+        ['bonus_review_given','bonus_review_received','bonus_frozen','bonus_seed','bonus_di']
+            .forEach(id => document.getElementById(id).value = '0');
+        calculateScores();
+    }
+
+    // ─── Init ───
+    window.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.score-slider').forEach(s => {
+            colorDisplay(s.nextElementSibling, parseInt(s.value));
+        });
+        calculateScores();
+    });
+</script>
+</body>
+</html>

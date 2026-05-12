@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Self-Assessment Test - Code Review | Calendar Project</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .student-info {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .student-info input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .student-info input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .section-points {
+            margin-left: auto;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .question {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #ede7f6;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.3);
+            accent-color: #667eea;
+        }
+
+        .option-letter {
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 14px;
+        }
+
+        .checkbox-question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: #f8f9ff;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            transform: scale(1.4);
+            accent-color: #667eea;
+        }
+
+        .submit-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 60px;
+            font-size: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .results {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.15);
+        }
+
+        .score-display {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .score-circle.excellent {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+        }
+
+        .score-circle.good {
+            background: linear-gradient(135deg, #2196F3 0%, #03A9F4 100%);
+        }
+
+        .score-circle.average {
+            background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);
+        }
+
+        .score-circle.needs-work {
+            background: linear-gradient(135deg, #f44336 0%, #E91E63 100%);
+        }
+
+        .score-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .grade-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .breakdown {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .breakdown h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-item .category {
+            font-weight: 600;
+        }
+
+        .breakdown-item .score {
+            font-weight: bold;
+        }
+
+        .breakdown-item .score.full {
+            color: #4CAF50;
+        }
+
+        .breakdown-item .score.partial {
+            color: #FF9800;
+        }
+
+        .breakdown-item .score.zero {
+            color: #f44336;
+        }
+
+        .feedback {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 10px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .feedback h4 {
+            margin-top: 0;
+            color: #e65100;
+        }
+
+        .feedback ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .feedback li {
+            margin-bottom: 8px;
+        }
+
+        .copy-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+        }
+
+        .copy-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        .copy-btn:hover {
+            background: #1976D2;
+        }
+
+        #resultsText {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            text-align: left;
+            direction: ltr;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .questions-answered {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .submit-btn, .copy-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Self-Assessment Test - Code Review</h1>
+    <p>Calendar Scheduling Project | Total 100 Points</p>
+</div>
+
+<div class="student-info">
+    <label><strong>Full Name:</strong></label>
+    <input type="text" id="studentName" placeholder="Enter your full name">
+
+    <label style="margin-top: 15px; display: block;"><strong>GitHub Project Link:</strong></label>
+    <input type="text" id="githubLink" placeholder="https://github.com/username/project">
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="questions-answered" id="questionsAnswered">0 out of 25 questions answered</div>
+</div>
+
+<!-- Section 1: Architecture & Layer Separation (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">1</div>
+        <div class="section-title">Architecture & Layer Separation</div>
+        <div class="section-points">20 Points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="d">
+        <div class="question-text">
+            <span class="question-number">1.</span>
+            How many layers does your project have?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q1" value="a">
+                <span class="option-letter">A</span>
+                One layer - everything in a single file
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="b">
+                <span class="option-letter">B</span>
+                2 layers - main file and helper file
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="c">
+                <span class="option-letter">C</span>
+                3 layers - Models, Service, Main
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="d">
+                <span class="option-letter">D</span>
+                4 layers - Models, Repository, Service, App
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">2.</span>
+            If you wanted to switch from CSV to a database, how many files would you need to change?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q2" value="a">
+                <span class="option-letter">A</span>
+                Only one file (Repository)
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="b">
+                <span class="option-letter">B</span>
+                2 files (Repository + Service)
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="c">
+                <span class="option-letter">C</span>
+                3 files or more
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="d">
+                <span class="option-letter">D</span>
+                All project files
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">3.</span>
+            Does your Service layer contain the word "csv" or a file path?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q3" value="a">
+                <span class="option-letter">A</span>
+                No - the Service only works with Domain Objects
+            </label>
+            <label class="option">
+                <input type="radio" name="q3" value="b">
+                <span class="option-letter">B</span>
+                Yes - there is a csv import or file path
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">4.</span>
+            Where are the working hours (07:00-19:00) defined?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q4" value="a">
+                <span class="option-letter">A</span>
+                In one place - Config file or constants
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="b">
+                <span class="option-letter">B</span>
+                In two places
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="c">
+                <span class="option-letter">C</span>
+                In three or more places
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="d">
+                <span class="option-letter">D</span>
+                Not defined - I wrote the numbers directly in the code
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Dependency Injection (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">2</div>
+        <div class="section-title">Dependency Injection</div>
+        <div class="section-points">20 Points</div>
+    </div>
+
+    <div class="question" data-points="7" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">5.</span>
+            How does your Service receive the Repository?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q5" value="a">
+                <span class="option-letter">A</span>
+                Through Constructor (receives as parameter)
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="b">
+                <span class="option-letter">B</span>
+                Creates it internally in <code>__init__</code>
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="c">
+                <span class="option-letter">C</span>
+                Does a direct import and calls it
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="d">
+                <span class="option-letter">D</span>
+                I don't have a separate Repository
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="7" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">6.</span>
+            Do you have an Abstract/Interface for Repository?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q6" value="a">
+                <span class="option-letter">A</span>
+                Yes - there is a class with ABC or Protocol
+            </label>
+            <label class="option">
+                <input type="radio" name="q6" value="b">
+                <span class="option-letter">B</span>
+                No - there is only one concrete class
+            </label>
+            <label class="option">
+                <input type="radio" name="q6" value="c">
+                <span class="option-letter">C</span>
+                I don't have a Repository at all
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="6" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">7.</span>
+            In your tests - do you use a real Repository (reads CSV) or a Mock/Fake?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q7" value="a">
+                <span class="option-letter">A</span>
+                Mock/Fake - tests don't touch files
+            </label>
+            <label class="option">
+                <input type="radio" name="q7" value="b">
+                <span class="option-letter">B</span>
+                Real Repository - tests read actual CSV files
+            </label>
+            <label class="option">
+                <input type="radio" name="q7" value="c">
+                <span class="option-letter">C</span>
+                I don't have tests
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Design Patterns & Models (15 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">3</div>
+        <div class="section-title">Design Patterns & Models</div>
+        <div class="section-points">15 Points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">8.</span>
+            Are your classes (Event, TimeSlot, etc.) Immutable?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q8" value="a">
+                <span class="option-letter">A</span>
+                Yes - using <code>@dataclass(frozen=True)</code> or NamedTuple
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="b">
+                <span class="option-letter">B</span>
+                No - using regular <code>@dataclass</code> (Mutable)
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="c">
+                <span class="option-letter">C</span>
+                Using dictionaries instead of classes
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="d">
+                <span class="option-letter">D</span>
+                Using plain tuples
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">9.</span>
+            Do you have Custom Exceptions for error handling?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q9" value="a">
+                <span class="option-letter">A</span>
+                Yes - I created dedicated Exceptions (e.g., PersonNotFoundError)
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="b">
+                <span class="option-letter">B</span>
+                Using only built-in Exceptions (ValueError, Exception)
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="c">
+                <span class="option-letter">C</span>
+                Using print for errors
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="d">
+                <span class="option-letter">D</span>
+                Not handling errors
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">10.</span>
+            Do you use Type Hints in your code?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q10" value="a">
+                <span class="option-letter">A</span>
+                Yes - in all functions and important variables
+            </label>
+            <label class="option">
+                <input type="radio" name="q10" value="b">
+                <span class="option-letter">B</span>
+                Partially - only in some functions
+            </label>
+            <label class="option">
+                <input type="radio" name="q10" value="c">
+                <span class="option-letter">C</span>
+                No - no Type Hints
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 4: Algorithm & Performance (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">4</div>
+        <div class="section-title">Algorithm & Performance</div>
+        <div class="section-points">20 Points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="b">
+        <div class="question-text">
+            <span class="question-number">11.</span>
+            What is the Time Complexity of your algorithm?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q11" value="a">
+                <span class="option-letter">A</span>
+                O(n) - linear
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="b">
+                <span class="option-letter">B</span>
+                O(n log n) - due to sorting
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="c">
+                <span class="option-letter">C</span>
+                O(n²) - nested loops
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="d">
+                <span class="option-letter">D</span>
+                I don't know
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">12.</span>
+            How do you handle overlapping events?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q12" value="a">
+                <span class="option-letter">A</span>
+                Merge them into one range (09:00-11:00 + 10:00-12:00 = 09:00-12:00)
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="b">
+                <span class="option-letter">B</span>
+                Leave them separate
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="c">
+                <span class="option-letter">C</span>
+                Ignore one of them
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="d">
+                <span class="option-letter">D</span>
+                I didn't consider this case
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">13.</span>
+            How do you find common free times for multiple people?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q13" value="a">
+                <span class="option-letter">A</span>
+                Calculate intersection of free time ranges
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="b">
+                <span class="option-letter">B</span>
+                Check every minute if everyone is free
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="c">
+                <span class="option-letter">C</span>
+                Iterate over all possible times in a loop
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="d">
+                <span class="option-letter">D</span>
+                I didn't implement support for multiple people
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">14.</span>
+            Do you have Early Exit optimizations?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q14" value="a">
+                <span class="option-letter">A</span>
+                Yes - if there's no common time, stop immediately
+            </label>
+            <label class="option">
+                <input type="radio" name="q14" value="b">
+                <span class="option-letter">B</span>
+                No - always iterate over all people
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 5: Testing (15 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">5</div>
+        <div class="section-title">Testing</div>
+        <div class="section-points">15 Points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="c">
+        <div class="question-text">
+            <span class="question-number">15.</span>
+            How many Unit Tests do you have?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q15" value="a">
+                <span class="option-letter">A</span>
+                I don't have tests
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="b">
+                <span class="option-letter">B</span>
+                1-2 tests
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="c">
+                <span class="option-letter">C</span>
+                3-5 tests
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="d">
+                <span class="option-letter">D</span>
+                More than 5 tests
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">16.</span>
+            Do your tests cover Edge Cases?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q16" value="a">
+                <span class="option-letter">A</span>
+                Yes - I tested: empty calendar, person with no events, entire day busy
+            </label>
+            <label class="option">
+                <input type="radio" name="q16" value="b">
+                <span class="option-letter">B</span>
+                Partially - tested some of the cases
+            </label>
+            <label class="option">
+                <input type="radio" name="q16" value="c">
+                <span class="option-letter">C</span>
+                No - only Happy Path
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">17.</span>
+            Are your tests independent from external files?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q17" value="a">
+                <span class="option-letter">A</span>
+                Yes - using Mock/Fake Repository
+            </label>
+            <label class="option">
+                <input type="radio" name="q17" value="b">
+                <span class="option-letter">B</span>
+                No - tests read actual CSV files
+            </label>
+            <label class="option">
+                <input type="radio" name="q17" value="c">
+                <span class="option-letter">C</span>
+                I don't have tests
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 6: Code Quality & Project Structure (10 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">6</div>
+        <div class="section-title">Code Quality & Project Structure</div>
+        <div class="section-points">10 Points</div>
+    </div>
+
+    <div class="question" data-points="3" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">18.</span>
+            Do you have a <code>setup.py</code> or <code>pyproject.toml</code>?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q18" value="a">
+                <span class="option-letter">A</span>
+                Yes - can install with pip install
+            </label>
+            <label class="option">
+                <input type="radio" name="q18" value="b">
+                <span class="option-letter">B</span>
+                Only have requirements.txt
+            </label>
+            <label class="option">
+                <input type="radio" name="q18" value="c">
+                <span class="option-letter">C</span>
+                No configuration files
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">19.</span>
+            Do you have Docstrings in important functions?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q19" value="a">
+                <span class="option-letter">A</span>
+                Yes - in the main functions
+            </label>
+            <label class="option">
+                <input type="radio" name="q19" value="b">
+                <span class="option-letter">B</span>
+                Partially - only in some
+            </label>
+            <label class="option">
+                <input type="radio" name="q19" value="c">
+                <span class="option-letter">C</span>
+                No - no documentation
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="3" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">20.</span>
+            Do you use Logging or Print?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q20" value="a">
+                <span class="option-letter">A</span>
+                Professional Logging (import logging)
+            </label>
+            <label class="option">
+                <input type="radio" name="q20" value="b">
+                <span class="option-letter">B</span>
+                Print statements
+            </label>
+            <label class="option">
+                <input type="radio" name="q20" value="c">
+                <span class="option-letter">C</span>
+                No output at all
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Bonus Section (up to 10 extra points) -->
+<div class="section" style="border: 2px solid #FFD700;">
+    <div class="section-header">
+        <div class="section-number" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">★</div>
+        <div class="section-title">Bonus</div>
+        <div class="section-points" style="background: #fff8e1; color: #f57c00;">Up to 10 Extra Points</div>
+    </div>
+
+    <div class="checkbox-question">
+        <div class="question-text">
+            <span class="question-number">Bonus:</span>
+            Check all that you implemented (each item is worth 2 points):
+        </div>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Two-Pointer Algorithm">
+            Implemented Two-Pointer Algorithm for interval intersection in O(n+m)
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Functional Programming">
+            Used Functional Programming (reduce, itertools)
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Protocol">
+            Used Protocol instead of ABC
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="CLI Arguments">
+            Added CLI arguments with argparse
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Extra Features">
+            Added extra features (GUI, API, etc.)
+        </label>
+    </div>
+</div>
+
+<div class="submit-section">
+    <button class="submit-btn" onclick="calculateScore()">Calculate My Score</button>
+</div>
+
+<div class="results" id="results">
+    <div class="score-display">
+        <div class="score-circle" id="scoreCircle">
+            <span id="scoreNumber">0</span>
+            <span class="score-label">out of 100</span>
+        </div>
+        <div class="grade-text" id="gradeText"></div>
+    </div>
+
+    <div class="breakdown" id="breakdown">
+        <h3>Breakdown by Category:</h3>
+        <!-- Will be filled by JavaScript -->
+    </div>
+
+    <div class="feedback" id="feedback">
+        <h4>Areas for Improvement:</h4>
+        <ul id="feedbackList">
+            <!-- Will be filled by JavaScript -->
+        </ul>
+    </div>
+
+    <div class="copy-section">
+        <h4>Copy the results and send to instructor:</h4>
+        <button class="copy-btn" onclick="copyResults()">Copy to Clipboard</button>
+        <div id="resultsText"></div>
+    </div>
+</div>
+
+<script>
+const sections = {
+    'Architecture & Layer Separation': { questions: [1,2,3,4], maxPoints: 20 },
+    'Dependency Injection': { questions: [5,6,7], maxPoints: 20 },
+    'Design Patterns & Models': { questions: [8,9,10], maxPoints: 15 },
+    'Algorithm & Performance': { questions: [11,12,13,14], maxPoints: 20 },
+    'Testing': { questions: [15,16,17], maxPoints: 15 },
+    'Code Quality & Project Structure': { questions: [18,19,20], maxPoints: 10 }
+};
+
+const feedbackMessages = {
+    'q1': { wrong: 'Consider splitting your code into 4 layers: Models, Repository, Service, App' },
+    'q2': { wrong: 'If you need to change more than one file, the Repository is not abstracted enough' },
+    'q3': { wrong: 'The Service should not know about CSV - that is the Repository\'s responsibility' },
+    'q4': { wrong: 'Define constants in one place to avoid duplication' },
+    'q5': { wrong: 'Use Constructor Injection - pass the Repository as a parameter' },
+    'q6': { wrong: 'Create an Abstract Repository (ABC or Protocol) for flexibility in swapping implementations' },
+    'q7': { wrong: 'Use a Mock Repository in tests to avoid dependency on files' },
+    'q8': { wrong: 'Use frozen=True in dataclass to prevent unwanted modifications' },
+    'q9': { wrong: 'Create Custom Exceptions for proper error handling' },
+    'q10': { wrong: 'Add Type Hints to improve readability and maintainability' },
+    'q11': { wrong: 'The problem can be solved in O(n log n) - review your algorithm' },
+    'q12': { wrong: 'It is important to merge overlapping events for correct results' },
+    'q13': { wrong: 'Use an interval intersection algorithm instead of point-by-point checking' },
+    'q14': { wrong: 'Add Early Exit for performance improvement' },
+    'q15': { wrong: 'Add at least 3 Unit Tests' },
+    'q16': { wrong: 'Cover Edge Cases: empty calendar, person with no events, entire day busy' },
+    'q17': { wrong: 'Tests should be independent - use a Mock Repository' },
+    'q18': { wrong: 'Add setup.py or pyproject.toml for convenient installation' },
+    'q19': { wrong: 'Add Docstrings to main functions' },
+    'q20': { wrong: 'Use logging instead of print for professional output' }
+};
+
+// Track answered questions
+function updateProgress() {
+    let answered = 0;
+    for (let i = 1; i <= 20; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (selected) answered++;
+    }
+    const percentage = (answered / 20) * 100;
+    document.getElementById('progressFill').style.width = percentage + '%';
+    document.getElementById('questionsAnswered').textContent = `${answered} out of 20 questions answered`;
+}
+
+// Add event listeners to all radio buttons
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Update visual selection
+        const options = this.closest('.options').querySelectorAll('.option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        this.closest('.option').classList.add('selected');
+        updateProgress();
+    });
+});
+
+function calculateScore() {
+    const studentName = document.getElementById('studentName').value.trim();
+    const githubLink = document.getElementById('githubLink').value.trim();
+
+    if (!studentName) {
+        alert('Please enter your full name');
+        return;
+    }
+
+    let totalScore = 0;
+    let sectionScores = {};
+    let wrongAnswers = [];
+    let answeredQuestions = [];
+
+    // Calculate section scores
+    for (const [sectionName, sectionData] of Object.entries(sections)) {
+        let sectionScore = 0;
+        let sectionMax = 0;
+
+        sectionData.questions.forEach(qNum => {
+            const question = document.querySelector(`.question[data-points]:nth-of-type(${qNum})`);
+            const allQuestions = document.querySelectorAll('.question[data-points]');
+            const questionEl = allQuestions[qNum - 1];
+
+            if (questionEl) {
+                const points = parseInt(questionEl.dataset.points);
+                const correct = questionEl.dataset.correct;
+                const selected = document.querySelector(`input[name="q${qNum}"]:checked`);
+
+                sectionMax += points;
+
+                if (selected) {
+                    answeredQuestions.push({
+                        num: qNum,
+                        answer: selected.value,
+                        correct: correct
+                    });
+
+                    if (selected.value === correct) {
+                        sectionScore += points;
+                        totalScore += points;
+                    } else {
+                        wrongAnswers.push(`q${qNum}`);
+                    }
+                } else {
+                    wrongAnswers.push(`q${qNum}`);
+                }
+            }
+        });
+
+        sectionScores[sectionName] = { score: sectionScore, max: sectionData.maxPoints };
+    }
+
+    // Calculate bonus points
+    let bonusScore = 0;
+    let bonusItems = [];
+    document.querySelectorAll('input[name="bonus"]:checked').forEach(checkbox => {
+        bonusScore += parseInt(checkbox.value);
+        bonusItems.push(checkbox.dataset.desc);
+    });
+    bonusScore = Math.min(bonusScore, 10); // Cap at 10
+
+    const finalScore = Math.min(totalScore + bonusScore, 110); // Allow up to 110 with bonus
+
+    // Display results
+    document.getElementById('results').style.display = 'block';
+
+    const scoreCircle = document.getElementById('scoreCircle');
+    const scoreNumber = document.getElementById('scoreNumber');
+    const gradeText = document.getElementById('gradeText');
+
+    scoreNumber.textContent = finalScore;
+
+    // Set color based on score
+    scoreCircle.className = 'score-circle';
+    if (finalScore >= 90) {
+        scoreCircle.classList.add('excellent');
+        gradeText.textContent = 'Excellent! 🌟';
+        gradeText.style.color = '#4CAF50';
+    } else if (finalScore >= 75) {
+        scoreCircle.classList.add('good');
+        gradeText.textContent = 'Very Good!';
+        gradeText.style.color = '#2196F3';
+    } else if (finalScore >= 60) {
+        scoreCircle.classList.add('average');
+        gradeText.textContent = 'Fair - Room for Improvement';
+        gradeText.style.color = '#FF9800';
+    } else {
+        scoreCircle.classList.add('needs-work');
+        gradeText.textContent = 'Needs More Work';
+        gradeText.style.color = '#f44336';
+    }
+
+    // Display breakdown
+    let breakdownHtml = '';
+    for (const [sectionName, data] of Object.entries(sectionScores)) {
+        const scoreClass = data.score === data.max ? 'full' : (data.score > 0 ? 'partial' : 'zero');
+        breakdownHtml += `
+            <div class="breakdown-item">
+                <span class="category">${sectionName}</span>
+                <span class="score ${scoreClass}">${data.score} / ${data.max}</span>
+            </div>
+        `;
+    }
+    if (bonusScore > 0) {
+        breakdownHtml += `
+            <div class="breakdown-item" style="background: #fff8e1;">
+                <span class="category">★ Bonus</span>
+                <span class="score full">+${bonusScore}</span>
+            </div>
+        `;
+    }
+    document.getElementById('breakdown').innerHTML = '<h3>Breakdown by Category:</h3>' + breakdownHtml;
+
+    // Display feedback
+    let feedbackHtml = '';
+    wrongAnswers.forEach(q => {
+        if (feedbackMessages[q]) {
+            feedbackHtml += `<li>${feedbackMessages[q].wrong}</li>`;
+        }
+    });
+
+    if (feedbackHtml) {
+        document.getElementById('feedback').style.display = 'block';
+        document.getElementById('feedbackList').innerHTML = feedbackHtml;
+    } else {
+        document.getElementById('feedback').style.display = 'none';
+    }
+
+    // Generate copyable results
+    const timestamp = new Date().toLocaleString('en-US');
+    let resultsText = `=== Code Review Self-Assessment Results ===
+Student: ${studentName}
+GitHub: ${githubLink || 'Not provided'}
+Date: ${timestamp}
+Final Score: ${finalScore}/100${bonusScore > 0 ? ` (+${bonusScore} bonus)` : ''}
+
+--- Section Breakdown ---
+`;
+
+    for (const [sectionName, data] of Object.entries(sectionScores)) {
+        resultsText += `${sectionName}: ${data.score}/${data.max}\n`;
+    }
+
+    if (bonusItems.length > 0) {
+        resultsText += `\n--- Bonus Items ---\n`;
+        bonusItems.forEach(item => {
+            resultsText += `✓ ${item}\n`;
+        });
+    }
+
+    resultsText += `\n--- Answers ---\n`;
+    answeredQuestions.forEach(q => {
+        const status = q.answer === q.correct ? '✓' : '✗';
+        resultsText += `Q${q.num}: ${q.answer.toUpperCase()} ${status}\n`;
+    });
+
+    document.getElementById('resultsText').textContent = resultsText;
+
+    // Scroll to results
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyResults() {
+    const resultsText = document.getElementById('resultsText').textContent;
+    navigator.clipboard.writeText(resultsText).then(() => {
+        alert('Results copied! You can now send them to your instructor.');
+    }).catch(err => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = resultsText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Results copied! You can now send them to your instructor.');
+    });
+}
+
+// Initialize progress
+updateProgress();
+</script>
+
+</body>
+</html>
