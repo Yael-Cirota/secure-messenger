@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preparation Topics for Code Review - Calendar Scheduling Project</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #fff;
+            color: #333;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            text-align: center;
+            font-size: 26px;
+        }
+
+        h2 {
+            color: #2980b9;
+            background-color: #ecf0f1;
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-top: 35px;
+            font-size: 18px;
+        }
+
+        .intro {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .topic {
+            margin-bottom: 20px;
+            padding: 18px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .topic-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .topic-details {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .topic-details ul {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .topic-details li {
+            margin-bottom: 6px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            display: inline-block;
+            font-size: 13px;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            direction: ltr;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .tip {
+            background-color: #d5f5e3;
+            border-left: 4px solid #27ae60;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+
+        .warning {
+            background-color: #fcf3cf;
+            border-left: 4px solid #f39c12;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+        }
+
+        .example-bad {
+            background-color: #fadbd8;
+            border-left: 4px solid #e74c3c;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-good {
+            background-color: #d4efdf;
+            border-left: 4px solid #27ae60;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .section-number {
+            background-color: #3498db;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .checklist {
+            background-color: #fef9e7;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .checklist ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .checklist li {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        @media print {
+            body { padding: 20px; }
+            .intro { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="intro">
+    <h1>Preparation Topics for Code Review</h1>
+    <p>Calendar Scheduling Project<br>
+    <small>Additional topics beyond the self-assessment test questions</small></p>
+</div>
+
+<!-- Section 1: Architecture Deep Dive -->
+<h2><span class="section-number">1</span> Architecture - Deep Dive</h2>
+
+<div class="topic">
+    <div class="topic-title">Can you draw a dependency diagram of your classes?</div>
+    <div class="topic-details">
+        <ul>
+            <li>Do the arrows point in one direction (from outer layers to inner layers)?</li>
+            <li>Are there circular dependencies?</li>
+            <li>Who depends on whom?</li>
+        </ul>
+        <div class="tip">
+            <strong>Clean Architecture Rule:</strong> Inner layers don't know about outer layers.<br>
+            Models ← Repository ← Service ← App
+        </div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Who is responsible for creating the Repository instance and passing it to the Service?</div>
+    <div class="topic-details">
+        <div class="tip">This should happen in <code>main</code> / <code>app.py</code> (entry point), not inside the Service.</div>
+<pre># app.py - Composition Root
+repository = CsvCalendarRepository("calendar.csv")
+service = SchedulerService(repository)
+result = service.find_available_slots(["Alice", "Bob"], duration)</pre>
+    </div>
+</div>
+
+<!-- Section 2: Design Patterns Deep Dive -->
+<h2><span class="section-number">2</span> Design Patterns - Deep Dive</h2>
+
+<div class="topic">
+    <div class="topic-title">Which Design Patterns did you use? Can you point to where in the code?</div>
+    <div class="topic-details">
+        <ul>
+            <li><strong>Repository Pattern</strong> - Separating data access from logic</li>
+            <li><strong>Strategy Pattern</strong> - Different interchangeable algorithms</li>
+            <li><strong>Factory Pattern</strong> - Creating complex objects</li>
+            <li><strong>Value Objects</strong> - Immutable objects representing values</li>
+        </ul>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Why did you choose those patterns? What problem does each one solve?</div>
+    <div class="topic-details">
+        <table>
+            <tr>
+                <th>Pattern</th>
+                <th>Problem it Solves</th>
+                <th>Advantage</th>
+            </tr>
+            <tr>
+                <td>Repository</td>
+                <td>Service is coupled to data type (CSV/DB)</td>
+                <td>Easy to swap data source</td>
+            </tr>
+            <tr>
+                <td>Value Object</td>
+                <td>Unexpected changes to shared objects</td>
+                <td>Safety, thread-safe</td>
+            </tr>
+            <tr>
+                <td>Factory</td>
+                <td>Complex object creation with validation</td>
+                <td>Clean, centralized code</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- Section 3: Algorithm Deep Dive -->
+<h2><span class="section-number">3</span> Algorithm - Deep Dive</h2>
+
+<div class="topic">
+    <div class="topic-title">Walk me through your algorithm step by step</div>
+    <div class="topic-details">
+        <ol>
+            <li>How do you load events for each person?</li>
+            <li>How do you merge overlapping events?</li>
+            <li>How do you calculate free times from busy times?</li>
+            <li>How do you find the intersection of free times between multiple people?</li>
+            <li>When do you filter by the requested meeting duration?</li>
+        </ol>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Which Data Structure did you use to store time ranges? Why?</div>
+    <div class="topic-details">
+        <ul>
+            <li><code>list[tuple]</code> - Simple but less readable</li>
+            <li><code>list[TimeRange]</code> - More readable with dataclass</li>
+            <li><code>SortedList</code> - Efficient for frequent insertions</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- Section 4: Error Handling -->
+<h2><span class="section-number">4</span> Error Handling & Validation</h2>
+
+<div class="topic">
+    <div class="topic-title">What happens in the following cases?</div>
+    <div class="topic-details">
+        <ul>
+            <li>A person doesn't exist in the calendar?</li>
+            <li>The CSV file is corrupted or missing?</li>
+            <li>The requested meeting duration is longer than the work day (12 hours)?</li>
+            <li>An event starts after it ends?</li>
+            <li>An event is outside working hours?</li>
+        </ul>
+        <div class="warning">You should be able to answer each of these cases and show where in the code it is handled!</div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Where do you perform Validation?</div>
+    <div class="topic-details">
+        <div class="tip">
+            <strong>Best Practice:</strong> Perform validation at system boundaries (Repository, API endpoints)<br>
+            Not deep inside (Service) - by then it's too late!
+        </div>
+    </div>
+</div>
+
+<!-- Section 5: Testing Deep Dive -->
+<h2><span class="section-number">5</span> Testing - Deep Dive</h2>
+
+<div class="topic">
+    <div class="topic-title">Show me a test that doesn't touch the file system</div>
+    <div class="topic-details">
+<pre>def test_find_slots_with_overlapping_events():
+    # Arrange - using fake repository
+    fake_repo = InMemoryRepository({
+        "Alice": [Event("09:00", "11:00"), Event("14:00", "16:00")]
+    })
+    service = SchedulerService(fake_repo)
+
+    # Act
+    result = service.find_available_slots(["Alice"], timedelta(hours=1))
+
+    # Assert
+    assert TimeSlot("07:00", "09:00") in result
+    assert TimeSlot("11:00", "14:00") in result</pre>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">How do you prepare Test Data?</div>
+    <div class="topic-details">
+        <ul>
+            <li><strong>Hardcoded</strong> - Simple but can get messy</li>
+            <li><strong>Fixtures</strong> - pytest fixtures for reuse</li>
+            <li><strong>Factories</strong> - Functions that create test data with defaults</li>
+            <li><strong>Builders</strong> - Pattern for creating complex objects</li>
+        </ul>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">If I change the algorithm implementation, will your tests still pass?</div>
+    <div class="topic-details">
+        <div class="tip">
+            Tests should verify <strong>behavior</strong> (what the algorithm returns), not <strong>implementation</strong> (how it does it).<br>
+            If an internal change breaks tests - the tests are too coupled to the implementation!
+        </div>
+    </div>
+</div>
+
+<!-- Section 6: Code Quality -->
+<h2><span class="section-number">6</span> Code Quality</h2>
+
+<div class="topic">
+    <div class="topic-title">Which Naming Convention do you use? Is it consistent?</div>
+    <div class="topic-details">
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Convention</th>
+                <th>Example</th>
+            </tr>
+            <tr>
+                <td>Variables and functions</td>
+                <td><code>snake_case</code></td>
+                <td><code>find_available_slots</code></td>
+            </tr>
+            <tr>
+                <td>Classes</td>
+                <td><code>PascalCase</code></td>
+                <td><code>CalendarRepository</code></td>
+            </tr>
+            <tr>
+                <td>Constants</td>
+                <td><code>UPPER_SNAKE_CASE</code></td>
+                <td><code>DAY_START_HOUR</code></td>
+            </tr>
+            <tr>
+                <td>Private</td>
+                <td><code>_leading_underscore</code></td>
+                <td><code>_parse_time</code></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Do you have functions longer than 20 lines?</div>
+    <div class="topic-details">
+        <div class="warning">
+            Long functions are hard to read, test, and maintain.<br>
+            <strong>Solution:</strong> Break them into small functions with clear names.
+        </div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Show me your Docstrings</div>
+    <div class="topic-details">
+        <div class="example-bad">
+            <strong>✗ Bad - explains the "what"</strong>
+<pre>def merge_events(events):
+    """Merges events."""  # adds no information</pre>
+        </div>
+        <div class="example-good">
+            <strong>✓ Good - explains the "why" and how to use</strong>
+<pre>def merge_events(events: list[Event]) -> list[TimeRange]:
+    """
+    Merge overlapping events into consolidated time ranges.
+
+    This is necessary because a person can have multiple
+    overlapping meetings, and we need to treat them as
+    one continuous busy period.
+
+    Args:
+        events: List of events, may be unsorted and overlapping
+
+    Returns:
+        Sorted list of non-overlapping time ranges
+    """</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Section 7: Python Specific -->
+<h2><span class="section-number">7</span> Python-Specific Questions</h2>
+
+<div class="topic">
+    <div class="topic-title">Why did you use <code>@dataclass</code>? What does <code>frozen=True</code> mean?</div>
+    <div class="topic-details">
+        <ul>
+            <li><code>@dataclass</code> - automatically creates <code>__init__</code>, <code>__repr__</code>, <code>__eq__</code></li>
+            <li><code>frozen=True</code> - makes the object immutable (fields cannot be changed)</li>
+        </ul>
+<pre>@dataclass(frozen=True)
+class TimeRange:
+    start: time
+    end: time
+
+# This will raise an error:
+tr = TimeRange(time(9,0), time(10,0))
+tr.start = time(8,0)  # FrozenInstanceError!</pre>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Do you use List Comprehensions or explicit loops?</div>
+    <div class="topic-details">
+        <div class="example-good">
+            <strong>List Comprehension - good for simple mapping/filtering</strong>
+<pre>free_slots = [slot for slot in slots if slot.duration >= min_duration]</pre>
+        </div>
+        <div class="example-good">
+            <strong>Explicit loop - good for complex logic</strong>
+<pre>merged = []
+for event in sorted_events:
+    if merged and event.start <= merged[-1].end:
+        merged[-1] = merge(merged[-1], event)
+    else:
+        merged.append(event)</pre>
+        </div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Show me how you parse time strings. Do you handle format errors?</div>
+    <div class="topic-details">
+<pre>from datetime import datetime
+
+def parse_time(time_str: str) -> time:
+    """Parse time string in HH:MM format."""
+    try:
+        return datetime.strptime(time_str.strip(), "%H:%M").time()
+    except ValueError as e:
+        raise InvalidTimeFormatError(
+            f"Invalid time format: '{time_str}'. Expected HH:MM"
+        ) from e</pre>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Do you use third-party libraries? Why or why not?</div>
+    <div class="topic-details">
+        <ul>
+            <li><strong>pandas</strong> - Advantage: easy CSV reading. Disadvantage: heavy dependency for a simple project</li>
+            <li><strong>pydantic</strong> - Advantage: built-in validation. Disadvantage: added complexity</li>
+            <li><strong>Standard library only</strong> - Advantage: no dependencies. Disadvantage: more code to write</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Section 8: Project Structure -->
+<h2><span class="section-number">8</span> Project Structure</h2>
+
+<div class="topic">
+    <div class="topic-title">Do you have a <code>requirements.txt</code> or <code>setup.py</code>? What's the difference?</div>
+    <div class="topic-details">
+        <table>
+            <tr>
+                <th>File</th>
+                <th>Purpose</th>
+                <th>Usage</th>
+            </tr>
+            <tr>
+                <td><code>requirements.txt</code></td>
+                <td>List of dependencies for development environment</td>
+                <td><code>pip install -r requirements.txt</code></td>
+            </tr>
+            <tr>
+                <td><code>setup.py</code></td>
+                <td>Package definition for installation</td>
+                <td><code>pip install .</code></td>
+            </tr>
+            <tr>
+                <td><code>pyproject.toml</code></td>
+                <td>The modern way - combines both</td>
+                <td><code>pip install .</code></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">How do you run your tests? Is it documented?</div>
+    <div class="topic-details">
+        <div class="tip">
+            Should be documented in the README:
+<pre># In the project directory
+pip install -e .  # Install in development mode
+pytest            # Run all tests
+pytest -v         # With verbose output
+pytest tests/test_service.py  # Specific test</pre>
+        </div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">Where is your Entry Point?</div>
+    <div class="topic-details">
+        <ul>
+            <li><code>app.py</code> or <code>main.py</code> - File that runs the program</li>
+            <li><code>__main__.py</code> - Enables <code>python -m package_name</code></li>
+            <li>Console script in setup.py - Enables a terminal command</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- Section 9: Real World -->
+<h2><span class="section-number">9</span> Real-World Considerations</h2>
+
+<div class="topic">
+    <div class="topic-title">How would you extend the project to support:</div>
+    <div class="topic-details">
+        <ul>
+            <li><strong>Multiple days?</strong> - Add date to each event, modify the algorithm</li>
+            <li><strong>Different Time Zones?</strong> - Use <code>datetime</code> with timezone info</li>
+            <li><strong>Recurring events?</strong> - Add recurrence rule, expand to individual events</li>
+            <li><strong>Priorities?</strong> - Add priority field, factor into calculation</li>
+        </ul>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">What would you do differently if you had more time?</div>
+    <div class="topic-details">
+        <div class="tip">This question tests self-awareness. Examples of good answers:
+            <ul>
+                <li>I would add more edge case tests</li>
+                <li>I would improve error handling</li>
+                <li>I would add logging</li>
+                <li>I would write better documentation</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">What was the hardest part of the project?</div>
+    <div class="topic-details">
+        <div class="tip">This question tests your ability to reflect. Be honest!</div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">If this were a Production system, what would you add?</div>
+    <div class="topic-details">
+        <ul>
+            <li><strong>Caching</strong> - Store computation results for repeated queries</li>
+            <li><strong>Database</strong> - Instead of CSV for scalability</li>
+            <li><strong>API Endpoints</strong> - REST or GraphQL for remote access</li>
+            <li><strong>Authentication</strong> - Who is authorized to view schedules</li>
+            <li><strong>Monitoring</strong> - Logs, metrics, alerts</li>
+            <li><strong>Rate Limiting</strong> - Protection from overload</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Bonus Section -->
+<h2>🌟 Challenging Bonus Questions</h2>
+
+<div class="topic">
+    <div class="topic-title">1. Two-Pointer Algorithm</div>
+    <div class="topic-details">
+        Can you implement Interval Intersection in O(n+m) instead of O(n*m)?
+        <div class="tip">Hint: Two sorted lists, two pointers advancing</div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">2. Functional Style</div>
+    <div class="topic-details">
+        Can you rewrite the merge logic using <code>reduce()</code> or <code>itertools</code>?
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">3. Protocol vs ABC</div>
+    <div class="topic-details">
+        What's the difference in Python? Which did you use and why?
+        <ul>
+            <li><code>ABC</code> - Explicit inheritance (nominal typing)</li>
+            <li><code>Protocol</code> - Duck typing (structural typing)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">4. Immutability</div>
+    <div class="topic-details">
+        Why are Immutable objects safer in Concurrent code?
+        <div class="tip">Because they cannot be changed, so there's no need for locks and no race conditions</div>
+    </div>
+</div>
+
+<div class="topic">
+    <div class="topic-title">5. Clean Architecture</div>
+    <div class="topic-details">
+        Draw the dependency rule - which layers can depend on which?
+    </div>
+</div>
+
+<!-- Checklist -->
+<h2>✅ Preparation Checklist</h2>
+
+<div class="checklist">
+    <ul>
+        <li><input type="checkbox"> I can draw the dependency diagram of my classes</li>
+        <li><input type="checkbox"> I can explain each Design Pattern I chose and why</li>
+        <li><input type="checkbox"> I know what happens in every edge case</li>
+        <li><input type="checkbox"> I can show a test that doesn't depend on files</li>
+        <li><input type="checkbox"> I can explain the algorithm step by step</li>
+        <li><input type="checkbox"> I know how to answer what I would do differently</li>
+        <li><input type="checkbox"> I know how to explain how to extend the project</li>
+    </ul>
+</div>
+
+<hr style="margin: 30px 0;">
+
+<p style="text-align: center; font-size: 16px; color: #27ae60;">
+    <strong>Good luck on your Code Review!</strong><br>
+    These topics complement the test questions - prepare for both!
+</p>
+
+</body>
+</html>

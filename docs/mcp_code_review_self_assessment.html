@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MCP Server - Code Review Self-Assessment</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.8;
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #f0f4f8;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 50%, #3182ce 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            margin: 12px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .header .subtitle {
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.75;
+        }
+
+        .student-info {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .student-info label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #4a5568;
+        }
+
+        .student-info label + label {
+            margin-top: 16px;
+        }
+
+        .student-info input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .student-info input:focus {
+            border-color: #3182ce;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .section {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #edf2f7;
+        }
+
+        .section-number {
+            background: linear-gradient(135deg, #1a365d 0%, #3182ce 100%);
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a365d;
+        }
+
+        .section-points {
+            margin-left: auto;
+            background: #ebf8ff;
+            color: #2b6cb0;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .question {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid #3182ce;
+        }
+
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 16px;
+            font-size: 15px;
+            color: #2d3748;
+        }
+
+        .question-number {
+            color: #3182ce;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+        }
+
+        .option.selected {
+            border-color: #3182ce;
+            background: #ebf8ff;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .option input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.3);
+            accent-color: #3182ce;
+        }
+
+        .option-letter {
+            background: #3182ce;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-question {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 11px 14px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .checkbox-item:hover {
+            background: #ebf8ff;
+            border-color: #bee3f8;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            transform: scale(1.4);
+            accent-color: #3182ce;
+        }
+
+        .submit-section {
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #1a365d 0%, #3182ce 100%);
+            color: white;
+            border: none;
+            padding: 18px 60px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+            letter-spacing: 0.3px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(49, 130, 206, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            display: none;
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            margin-top: 30px;
+            box-shadow: 0 6px 30px rgba(0,0,0,0.12);
+        }
+
+        .score-display {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .score-circle.excellent {
+            background: linear-gradient(135deg, #276749 0%, #48bb78 100%);
+        }
+
+        .score-circle.good {
+            background: linear-gradient(135deg, #2b6cb0 0%, #4299e1 100%);
+        }
+
+        .score-circle.average {
+            background: linear-gradient(135deg, #c05621 0%, #ed8936 100%);
+        }
+
+        .score-circle.needs-work {
+            background: linear-gradient(135deg, #c53030 0%, #fc8181 100%);
+        }
+
+        .score-label {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .grade-text {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .breakdown {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .breakdown h3 {
+            margin-bottom: 18px;
+            color: #1a365d;
+            font-size: 18px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .breakdown-item .category {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .breakdown-item .score {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .breakdown-item .score.full {
+            color: #276749;
+        }
+
+        .breakdown-item .score.partial {
+            color: #c05621;
+        }
+
+        .breakdown-item .score.zero {
+            color: #c53030;
+        }
+
+        .feedback {
+            margin-top: 30px;
+            padding: 22px;
+            background: #fffbeb;
+            border-radius: 10px;
+            border-left: 4px solid #d69e2e;
+        }
+
+        .feedback h4 {
+            margin-top: 0;
+            color: #975a16;
+            font-size: 16px;
+        }
+
+        .feedback ul {
+            margin: 0;
+            padding-left: 22px;
+        }
+
+        .feedback li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            color: #744210;
+        }
+
+        .copy-section {
+            margin-top: 30px;
+            padding: 22px;
+            background: #ebf8ff;
+            border-radius: 10px;
+        }
+
+        .copy-section h4 {
+            margin-top: 0;
+            color: #2b6cb0;
+        }
+
+        .copy-btn {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2b6cb0;
+        }
+
+        #resultsText {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            text-align: left;
+            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a365d 0%, #3182ce 100%);
+            transition: width 0.3s ease;
+        }
+
+        .questions-answered {
+            text-align: center;
+            color: #718096;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        code {
+            background: #edf2f7;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #e53e3e;
+        }
+
+        .info-box {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #2c5282;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            .header {
+                padding: 25px 20px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .section-header {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .section-points {
+                margin-left: 57px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .submit-btn, .copy-btn, .progress-bar, .questions-answered {
+                display: none;
+            }
+            .section {
+                box-shadow: none;
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>MCP Server - Code Review Self-Assessment</h1>
+    <p>Model Context Protocol Server Project</p>
+    <div class="subtitle">Total: 100 points | Assess your MCP server implementation quality</div>
+</div>
+
+<div class="student-info">
+    <label>Full Name:</label>
+    <input type="text" id="studentName" placeholder="Enter your full name">
+
+    <label>GitHub Repository Link:</label>
+    <input type="text" id="githubLink" placeholder="https://github.com/username/my-mcp-server">
+
+    <label>Brief Description of Your MCP Server:</label>
+    <input type="text" id="serverDescription" placeholder="e.g., File organizer, Process manager, Study materials helper...">
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="questions-answered" id="questionsAnswered">0 of 25 questions answered</div>
+</div>
+
+<div class="info-box">
+    This self-assessment evaluates your understanding of MCP server development best practices. Answer honestly based on your actual implementation. The goal is learning, not just scoring.
+</div>
+
+<!-- Section 1: MCP Architecture & Server Setup (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">1</div>
+        <div class="section-title">MCP Architecture & Server Setup</div>
+        <div class="section-points">20 points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">1.</span>
+            How are your MCP tools registered with the server?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q1" value="a">
+                <span class="option-letter">A</span>
+                Using decorators (e.g., <code>@mcp.tool()</code>) with clear descriptions
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="b">
+                <span class="option-letter">B</span>
+                Manual registration in a setup function
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="c">
+                <span class="option-letter">C</span>
+                All logic is in a single function, no separate tool registration
+            </label>
+            <label class="option">
+                <input type="radio" name="q1" value="d">
+                <span class="option-letter">D</span>
+                Not sure how my tools are registered
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">2.</span>
+            How is your project structured?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q2" value="a">
+                <span class="option-letter">A</span>
+                Separated into layers: models, services/logic, utilities, and entry point
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="b">
+                <span class="option-letter">B</span>
+                Split into 2-3 files with some separation
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="c">
+                <span class="option-letter">C</span>
+                Everything is in one file but organized with functions
+            </label>
+            <label class="option">
+                <input type="radio" name="q2" value="d">
+                <span class="option-letter">D</span>
+                Everything is in one file with minimal structure
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">3.</span>
+            Does each of your MCP tools have a clear, descriptive docstring or description?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q3" value="a">
+                <span class="option-letter">A</span>
+                Yes - each tool has a description explaining what it does, when to use it, and what it returns
+            </label>
+            <label class="option">
+                <input type="radio" name="q3" value="b">
+                <span class="option-letter">B</span>
+                Partially - some tools have descriptions, others don't
+            </label>
+            <label class="option">
+                <input type="radio" name="q3" value="c">
+                <span class="option-letter">C</span>
+                Only the function name serves as documentation
+            </label>
+            <label class="option">
+                <input type="radio" name="q3" value="d">
+                <span class="option-letter">D</span>
+                No descriptions at all
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">4.</span>
+            How do your tools return results to the MCP client?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q4" value="a">
+                <span class="option-letter">A</span>
+                Structured response with success/error status and consistent format
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="b">
+                <span class="option-letter">B</span>
+                Returning dictionaries with varying structure per tool
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="c">
+                <span class="option-letter">C</span>
+                Returning raw strings or plain text
+            </label>
+            <label class="option">
+                <input type="radio" name="q4" value="d">
+                <span class="option-letter">D</span>
+                Printing to console instead of returning values
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Input Validation & Error Handling (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">2</div>
+        <div class="section-title">Input Validation & Error Handling</div>
+        <div class="section-points">20 points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">5.</span>
+            How do you validate inputs to your MCP tools?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q5" value="a">
+                <span class="option-letter">A</span>
+                Using a validation library (Pydantic, Zod, etc.) with defined schemas and constraints
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="b">
+                <span class="option-letter">B</span>
+                Manual if/else checks at the beginning of each function
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="c">
+                <span class="option-letter">C</span>
+                Basic type checking only
+            </label>
+            <label class="option">
+                <input type="radio" name="q5" value="d">
+                <span class="option-letter">D</span>
+                No input validation - trusting all inputs
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">6.</span>
+            How does your server handle errors when something goes wrong?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q6" value="a">
+                <span class="option-letter">A</span>
+                Returns structured error with code, message, and actionable hint for recovery
+            </label>
+            <label class="option">
+                <input type="radio" name="q6" value="b">
+                <span class="option-letter">B</span>
+                Returns error message string without structured format
+            </label>
+            <label class="option">
+                <input type="radio" name="q6" value="c">
+                <span class="option-letter">C</span>
+                Raises exceptions that crash the tool
+            </label>
+            <label class="option">
+                <input type="radio" name="q6" value="d">
+                <span class="option-letter">D</span>
+                Silently fails or returns None
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">7.</span>
+            Do you have defined error codes for different failure scenarios?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q7" value="a">
+                <span class="option-letter">A</span>
+                Yes - named constants (e.g., <code>INVALID_INPUT</code>, <code>TIMEOUT</code>, <code>NOT_FOUND</code>)
+            </label>
+            <label class="option">
+                <input type="radio" name="q7" value="b">
+                <span class="option-letter">B</span>
+                Some error differentiation but using raw strings
+            </label>
+            <label class="option">
+                <input type="radio" name="q7" value="c">
+                <span class="option-letter">C</span>
+                All errors return the same generic message
+            </label>
+            <label class="option">
+                <input type="radio" name="q7" value="d">
+                <span class="option-letter">D</span>
+                No error handling implemented
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">8.</span>
+            How do you handle edge cases in your tool inputs (empty values, out-of-range, invalid format)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q8" value="a">
+                <span class="option-letter">A</span>
+                Validation catches them before execution, returning helpful feedback
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="b">
+                <span class="option-letter">B</span>
+                Some edge cases handled, but not consistently
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="c">
+                <span class="option-letter">C</span>
+                They cause unexpected crashes or wrong behavior
+            </label>
+            <label class="option">
+                <input type="radio" name="q8" value="d">
+                <span class="option-letter">D</span>
+                Haven't considered edge cases
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Security & Safety (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">3</div>
+        <div class="section-title">Security & Safety</div>
+        <div class="section-points">20 points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">9.</span>
+            If your server executes system commands, how are they constructed?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q9" value="a">
+                <span class="option-letter">A</span>
+                As a list of arguments with <code>shell=False</code> (no shell injection risk)
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="b">
+                <span class="option-letter">B</span>
+                String concatenation but with input sanitization
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="c">
+                <span class="option-letter">C</span>
+                String concatenation with <code>shell=True</code>
+            </label>
+            <label class="option">
+                <input type="radio" name="q9" value="d">
+                <span class="option-letter">D</span>
+                My server doesn't execute system commands (N/A - full points)
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">10.</span>
+            How do you manage sensitive configuration (API keys, passwords, paths)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q10" value="a">
+                <span class="option-letter">A</span>
+                Environment variables or <code>.env</code> file (excluded from git)
+            </label>
+            <label class="option">
+                <input type="radio" name="q10" value="b">
+                <span class="option-letter">B</span>
+                Config file that's in .gitignore
+            </label>
+            <label class="option">
+                <input type="radio" name="q10" value="c">
+                <span class="option-letter">C</span>
+                Hardcoded in source code but not pushed to public repo
+            </label>
+            <label class="option">
+                <input type="radio" name="q10" value="d">
+                <span class="option-letter">D</span>
+                My server has no sensitive config (N/A - full points)
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">11.</span>
+            Does your server have timeout protection for long-running operations?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q11" value="a">
+                <span class="option-letter">A</span>
+                Yes - configurable timeouts with graceful termination and error reporting
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="b">
+                <span class="option-letter">B</span>
+                Fixed timeout with basic error handling
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="c">
+                <span class="option-letter">C</span>
+                No timeout - operations can hang indefinitely
+            </label>
+            <label class="option">
+                <input type="radio" name="q11" value="d">
+                <span class="option-letter">D</span>
+                My operations are instant and don't need timeouts (N/A - full points)
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">12.</span>
+            How do you limit or protect against oversized outputs (e.g., reading a huge file)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q12" value="a">
+                <span class="option-letter">A</span>
+                Output is truncated to a max size with a flag indicating truncation
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="b">
+                <span class="option-letter">B</span>
+                Fixed limit but no indication to the user that output was cut
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="c">
+                <span class="option-letter">C</span>
+                No protection - full output is always returned regardless of size
+            </label>
+            <label class="option">
+                <input type="radio" name="q12" value="d">
+                <span class="option-letter">D</span>
+                My tools only return small fixed-size results (N/A - full points)
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 4: Testing & Reliability (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">4</div>
+        <div class="section-title">Testing & Reliability</div>
+        <div class="section-points">20 points</div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="c">
+        <div class="question-text">
+            <span class="question-number">13.</span>
+            How many tests does your project have?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q13" value="a">
+                <span class="option-letter">A</span>
+                No tests
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="b">
+                <span class="option-letter">B</span>
+                1-2 basic tests
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="c">
+                <span class="option-letter">C</span>
+                3-5 tests covering main scenarios
+            </label>
+            <label class="option">
+                <input type="radio" name="q13" value="d">
+                <span class="option-letter">D</span>
+                More than 5 tests with good coverage
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">14.</span>
+            Do your tests use mocking to isolate from external systems (file system, APIs, databases)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q14" value="a">
+                <span class="option-letter">A</span>
+                Yes - I mock external dependencies so tests are fast and reliable
+            </label>
+            <label class="option">
+                <input type="radio" name="q14" value="b">
+                <span class="option-letter">B</span>
+                Some tests use mocks, others hit real systems
+            </label>
+            <label class="option">
+                <input type="radio" name="q14" value="c">
+                <span class="option-letter">C</span>
+                All tests hit real systems (files, network, etc.)
+            </label>
+            <label class="option">
+                <input type="radio" name="q14" value="d">
+                <span class="option-letter">D</span>
+                No tests written
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">15.</span>
+            Do your tests cover error/failure paths (not just happy paths)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q15" value="a">
+                <span class="option-letter">A</span>
+                Yes - I test invalid inputs, missing resources, timeouts, etc.
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="b">
+                <span class="option-letter">B</span>
+                Some error cases tested but not comprehensively
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="c">
+                <span class="option-letter">C</span>
+                Only happy path tested
+            </label>
+            <label class="option">
+                <input type="radio" name="q15" value="d">
+                <span class="option-letter">D</span>
+                No tests written
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="5" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">16.</span>
+            Can you run your tests without any manual setup (no real files, no network, no special config)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q16" value="a">
+                <span class="option-letter">A</span>
+                Yes - tests are fully self-contained and run anywhere
+            </label>
+            <label class="option">
+                <input type="radio" name="q16" value="b">
+                <span class="option-letter">B</span>
+                Mostly - some tests need minor setup (temp files, env vars)
+            </label>
+            <label class="option">
+                <input type="radio" name="q16" value="c">
+                <span class="option-letter">C</span>
+                Tests require specific environment configuration
+            </label>
+            <label class="option">
+                <input type="radio" name="q16" value="d">
+                <span class="option-letter">D</span>
+                No tests written
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Section 5: Code Quality & Configuration (20 points) -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-number">5</div>
+        <div class="section-title">Code Quality & Configuration</div>
+        <div class="section-points">20 points</div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">17.</span>
+            Does your project have a proper package configuration (<code>pyproject.toml</code>, <code>package.json</code>, etc.)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q17" value="a">
+                <span class="option-letter">A</span>
+                Yes - with dependencies, metadata, and can be installed properly
+            </label>
+            <label class="option">
+                <input type="radio" name="q17" value="b">
+                <span class="option-letter">B</span>
+                Only a requirements.txt / basic dependency list
+            </label>
+            <label class="option">
+                <input type="radio" name="q17" value="c">
+                <span class="option-letter">C</span>
+                No dependency management file
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">18.</span>
+            Do you have a <code>.gitignore</code> that excludes sensitive and generated files?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q18" value="a">
+                <span class="option-letter">A</span>
+                Yes - excludes .env, venv/node_modules, config files with secrets, caches
+            </label>
+            <label class="option">
+                <input type="radio" name="q18" value="b">
+                <span class="option-letter">B</span>
+                Basic .gitignore but missing some important entries
+            </label>
+            <label class="option">
+                <input type="radio" name="q18" value="c">
+                <span class="option-letter">C</span>
+                No .gitignore file
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">19.</span>
+            Does your project include an MCP configuration example (e.g., <code>mcp.json</code> or equivalent)?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q19" value="a">
+                <span class="option-letter">A</span>
+                Yes - an example config showing how to connect the server to a client
+            </label>
+            <label class="option">
+                <input type="radio" name="q19" value="b">
+                <span class="option-letter">B</span>
+                Documented in README but no example file
+            </label>
+            <label class="option">
+                <input type="radio" name="q19" value="c">
+                <span class="option-letter">C</span>
+                No configuration documentation
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">20.</span>
+            Does your README explain what the server does, how to set it up, and how to use each tool?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q20" value="a">
+                <span class="option-letter">A</span>
+                Yes - clear description, setup instructions, and tool documentation
+            </label>
+            <label class="option">
+                <input type="radio" name="q20" value="b">
+                <span class="option-letter">B</span>
+                Basic README with some information
+            </label>
+            <label class="option">
+                <input type="radio" name="q20" value="c">
+                <span class="option-letter">C</span>
+                Minimal or no README
+            </label>
+        </div>
+    </div>
+
+    <div class="question" data-points="4" data-correct="a">
+        <div class="question-text">
+            <span class="question-number">21.</span>
+            Do you use type hints / type annotations throughout your code?
+        </div>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="q21" value="a">
+                <span class="option-letter">A</span>
+                Yes - function parameters, return types, and important variables are typed
+            </label>
+            <label class="option">
+                <input type="radio" name="q21" value="b">
+                <span class="option-letter">B</span>
+                Partially - some functions are typed
+            </label>
+            <label class="option">
+                <input type="radio" name="q21" value="c">
+                <span class="option-letter">C</span>
+                No type annotations
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Bonus Section -->
+<div class="section" style="border: 2px solid #d69e2e;">
+    <div class="section-header">
+        <div class="section-number" style="background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);">+</div>
+        <div class="section-title">Bonus Points</div>
+        <div class="section-points" style="background: #fffff0; color: #975a16;">Up to 10 extra points</div>
+    </div>
+
+    <div class="checkbox-question">
+        <div class="question-text">
+            <span class="question-number">Bonus:</span>
+            Check all that apply to your implementation (2 points each):
+        </div>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Async/Await Pattern">
+            Used async/await properly to prevent blocking the event loop
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Separation of Concerns">
+            Clear separation between tool definitions, business logic, and utilities
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Logging">
+            Professional logging (using logging library, not print statements)
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Multiple Tools">
+            Implemented 3+ distinct tools that work together cohesively
+        </label>
+        <label class="checkbox-item">
+            <input type="checkbox" name="bonus" value="2" data-desc="Path/Input Sanitization">
+            Input sanitization beyond basic validation (path normalization, escaping, etc.)
+        </label>
+    </div>
+</div>
+
+<div class="submit-section">
+    <button class="submit-btn" onclick="calculateScore()">Calculate My Score</button>
+</div>
+
+<div class="results" id="results">
+    <div class="score-display">
+        <div class="score-circle" id="scoreCircle">
+            <span id="scoreNumber">0</span>
+            <span class="score-label">out of 100</span>
+        </div>
+        <div class="grade-text" id="gradeText"></div>
+    </div>
+
+    <div class="breakdown" id="breakdown">
+        <h3>Score Breakdown by Category:</h3>
+    </div>
+
+    <div class="feedback" id="feedback">
+        <h4>Suggestions for Improvement:</h4>
+        <ul id="feedbackList"></ul>
+    </div>
+
+    <div class="copy-section">
+        <h4>Copy your results and share with your instructor:</h4>
+        <button class="copy-btn" onclick="copyResults()">Copy to Clipboard</button>
+        <div id="resultsText"></div>
+    </div>
+</div>
+
+<script>
+const TOTAL_QUESTIONS = 21;
+
+const sections = {
+    'MCP Architecture & Server Setup': { questions: [1,2,3,4], maxPoints: 20 },
+    'Input Validation & Error Handling': { questions: [5,6,7,8], maxPoints: 20 },
+    'Security & Safety': { questions: [9,10,11,12], maxPoints: 20 },
+    'Testing & Reliability': { questions: [13,14,15,16], maxPoints: 20 },
+    'Code Quality & Configuration': { questions: [17,18,19,20,21], maxPoints: 20 }
+};
+
+const feedbackMessages = {
+    'q1': { wrong: 'Use decorators (@mcp.tool()) with clear descriptions so the LLM client knows when and how to use each tool.' },
+    'q2': { wrong: 'Separate your code into layers (models, services, utils, entry point) for maintainability and testability.' },
+    'q3': { wrong: 'Every tool needs a description - the LLM reads these to decide which tool to call. Include what it does, when to use it, and what it returns.' },
+    'q4': { wrong: 'Use a consistent response structure (e.g., {ok, data, error}) so the client can reliably parse results.' },
+    'q5': { wrong: 'Use a validation library (Pydantic, Zod) to define input schemas with constraints. This catches bad inputs early and documents your API.' },
+    'q6': { wrong: 'Return structured errors with a code, message, and recovery hint. This helps the LLM recover gracefully instead of guessing.' },
+    'q7': { wrong: 'Define named error constants (NOT_FOUND, TIMEOUT, INVALID_INPUT). Structured codes let clients handle errors programmatically.' },
+    'q8': { wrong: 'Always validate edge cases before execution: empty strings, null values, out-of-range numbers, invalid formats.' },
+    'q9': { wrong: 'Never use shell=True or string concatenation for commands. Build commands as lists to prevent shell injection attacks.' },
+    'q10': { wrong: 'Store secrets in environment variables or .env files (excluded from git). Never hardcode credentials in source code.' },
+    'q11': { wrong: 'Add configurable timeouts to prevent operations from hanging indefinitely. Kill and report cleanly on timeout.' },
+    'q12': { wrong: 'Truncate large outputs to prevent memory issues. Include a flag so the user knows the output was truncated.' },
+    'q13': { wrong: 'Write at least 3-5 tests covering your main tool functionality and common failure scenarios.' },
+    'q14': { wrong: 'Mock external dependencies (file system, APIs, network) in tests so they are fast, reliable, and don\'t need special setup.' },
+    'q15': { wrong: 'Test error paths too: what happens with invalid input? Missing resources? Timeouts? These often have the worst bugs.' },
+    'q16': { wrong: 'Tests should be self-contained. Anyone cloning your repo should be able to run them without manual environment setup.' },
+    'q17': { wrong: 'Add a pyproject.toml or package.json with dependencies and metadata so others can install and run your server easily.' },
+    'q18': { wrong: 'Create a .gitignore that excludes: .env, virtual environments, node_modules, IDE files, and any generated config with secrets.' },
+    'q19': { wrong: 'Include an example MCP config file (e.g., mcp.example.json) showing how to connect your server to a client like Claude.' },
+    'q20': { wrong: 'Write a clear README with: what your server does, prerequisites, setup steps, and documentation for each tool.' },
+    'q21': { wrong: 'Add type annotations to function signatures and important variables. This improves readability and enables IDE support.' }
+};
+
+function updateProgress() {
+    let answered = 0;
+    for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (selected) answered++;
+    }
+    const percentage = (answered / TOTAL_QUESTIONS) * 100;
+    document.getElementById('progressFill').style.width = percentage + '%';
+    document.getElementById('questionsAnswered').textContent = `${answered} of ${TOTAL_QUESTIONS} questions answered`;
+}
+
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const options = this.closest('.options').querySelectorAll('.option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        this.closest('.option').classList.add('selected');
+        updateProgress();
+    });
+});
+
+function calculateScore() {
+    const studentName = document.getElementById('studentName').value.trim();
+    const githubLink = document.getElementById('githubLink').value.trim();
+    const serverDescription = document.getElementById('serverDescription').value.trim();
+
+    if (!studentName) {
+        alert('Please enter your full name.');
+        return;
+    }
+
+    let totalScore = 0;
+    let sectionScores = {};
+    let wrongAnswers = [];
+    let answeredQuestions = [];
+
+    for (const [sectionName, sectionData] of Object.entries(sections)) {
+        let sectionScore = 0;
+
+        sectionData.questions.forEach(qNum => {
+            const allQuestions = document.querySelectorAll('.question[data-points]');
+            const questionEl = allQuestions[qNum - 1];
+
+            if (questionEl) {
+                const points = parseInt(questionEl.dataset.points);
+                const correct = questionEl.dataset.correct;
+                const selected = document.querySelector(`input[name="q${qNum}"]:checked`);
+
+                if (selected) {
+                    answeredQuestions.push({
+                        num: qNum,
+                        answer: selected.value,
+                        correct: correct
+                    });
+
+                    if (selected.value === correct) {
+                        sectionScore += points;
+                        totalScore += points;
+                    } else if (selected.value === 'b') {
+                        // Partial credit for "B" answers (usually partial implementation)
+                        const partial = Math.floor(points * 0.5);
+                        sectionScore += partial;
+                        totalScore += partial;
+                        wrongAnswers.push(`q${qNum}`);
+                    } else {
+                        wrongAnswers.push(`q${qNum}`);
+                    }
+                } else {
+                    wrongAnswers.push(`q${qNum}`);
+                }
+            }
+        });
+
+        sectionScores[sectionName] = { score: sectionScore, max: sectionData.maxPoints };
+    }
+
+    // Bonus
+    let bonusScore = 0;
+    let bonusItems = [];
+    document.querySelectorAll('input[name="bonus"]:checked').forEach(checkbox => {
+        bonusScore += parseInt(checkbox.value);
+        bonusItems.push(checkbox.dataset.desc);
+    });
+    bonusScore = Math.min(bonusScore, 10);
+
+    const finalScore = Math.min(totalScore + bonusScore, 110);
+
+    // Display results
+    document.getElementById('results').style.display = 'block';
+
+    const scoreCircle = document.getElementById('scoreCircle');
+    const scoreNumber = document.getElementById('scoreNumber');
+    const gradeText = document.getElementById('gradeText');
+
+    scoreNumber.textContent = finalScore;
+
+    scoreCircle.className = 'score-circle';
+    if (finalScore >= 90) {
+        scoreCircle.classList.add('excellent');
+        gradeText.textContent = 'Excellent! Well-engineered MCP server.';
+        gradeText.style.color = '#276749';
+    } else if (finalScore >= 75) {
+        scoreCircle.classList.add('good');
+        gradeText.textContent = 'Good work! A few areas to polish.';
+        gradeText.style.color = '#2b6cb0';
+    } else if (finalScore >= 60) {
+        scoreCircle.classList.add('average');
+        gradeText.textContent = 'Decent start - review the suggestions below.';
+        gradeText.style.color = '#c05621';
+    } else {
+        scoreCircle.classList.add('needs-work');
+        gradeText.textContent = 'Needs more work - focus on fundamentals.';
+        gradeText.style.color = '#c53030';
+    }
+
+    // Breakdown
+    let breakdownHtml = '';
+    for (const [sectionName, data] of Object.entries(sectionScores)) {
+        const scoreClass = data.score === data.max ? 'full' : (data.score > 0 ? 'partial' : 'zero');
+        breakdownHtml += `
+            <div class="breakdown-item">
+                <span class="category">${sectionName}</span>
+                <span class="score ${scoreClass}">${data.score} / ${data.max}</span>
+            </div>
+        `;
+    }
+    if (bonusScore > 0) {
+        breakdownHtml += `
+            <div class="breakdown-item" style="background: #fffff0;">
+                <span class="category">+ Bonus</span>
+                <span class="score full">+${bonusScore}</span>
+            </div>
+        `;
+    }
+    document.getElementById('breakdown').innerHTML = '<h3>Score Breakdown by Category:</h3>' + breakdownHtml;
+
+    // Feedback
+    let feedbackHtml = '';
+    wrongAnswers.forEach(q => {
+        if (feedbackMessages[q]) {
+            feedbackHtml += `<li>${feedbackMessages[q].wrong}</li>`;
+        }
+    });
+
+    if (feedbackHtml) {
+        document.getElementById('feedback').style.display = 'block';
+        document.getElementById('feedbackList').innerHTML = feedbackHtml;
+    } else {
+        document.getElementById('feedback').style.display = 'none';
+    }
+
+    // Copyable results
+    const timestamp = new Date().toLocaleString('en-US');
+    let resultsText = `=== MCP Server - Code Review Self-Assessment ===
+Student: ${studentName}
+GitHub: ${githubLink || 'Not provided'}
+Server: ${serverDescription || 'Not described'}
+Date: ${timestamp}
+Final Score: ${finalScore}/100${bonusScore > 0 ? ` (+${bonusScore} bonus)` : ''}
+
+--- Section Breakdown ---
+`;
+
+    for (const [sectionName, data] of Object.entries(sectionScores)) {
+        resultsText += `${sectionName}: ${data.score}/${data.max}\n`;
+    }
+
+    if (bonusItems.length > 0) {
+        resultsText += `\n--- Bonus Items ---\n`;
+        bonusItems.forEach(item => {
+            resultsText += `+ ${item}\n`;
+        });
+    }
+
+    resultsText += `\n--- Answers ---\n`;
+    answeredQuestions.forEach(q => {
+        const status = q.answer === q.correct ? 'CORRECT' : 'INCORRECT';
+        resultsText += `Q${q.num}: ${q.answer.toUpperCase()} [${status}]\n`;
+    });
+
+    if (wrongAnswers.length > 0) {
+        resultsText += `\n--- Areas for Improvement ---\n`;
+        wrongAnswers.forEach(q => {
+            if (feedbackMessages[q]) {
+                resultsText += `- ${feedbackMessages[q].wrong}\n`;
+            }
+        });
+    }
+
+    document.getElementById('resultsText').textContent = resultsText;
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyResults() {
+    const resultsText = document.getElementById('resultsText').textContent;
+    navigator.clipboard.writeText(resultsText).then(() => {
+        alert('Results copied! You can now paste and send to your instructor.');
+    }).catch(err => {
+        const textarea = document.createElement('textarea');
+        textarea.value = resultsText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Results copied! You can now paste and send to your instructor.');
+    });
+}
+
+updateProgress();
+</script>
+
+</body>
+</html>
