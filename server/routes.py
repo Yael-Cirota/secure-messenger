@@ -63,16 +63,18 @@ USEFUL PATTERN — how to save a new row:
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sse_starlette.sse import EventSourceResponse
 
-from .models import User, Message, get_db
+from .models import get_db
 from .schemas import (
     RegisterRequest, LoginRequest, TokenResponse,
-    SendMessageRequest, MessageResponse,
+    SendMessageRequest, MessageResponse, BroadcastEvent,
 )
 from .auth import hash_password, verify_password, create_token, require_auth
 from .crypto import encrypt, decrypt
+from .repository import UserRepository, MessageRepository
+from .broadcaster import broadcaster
 
 
 log = logging.getLogger(__name__)
@@ -84,13 +86,10 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.username == body.username))
-    existing = result.scalars().first()
-    if existing:
+    users = UserRepository(db)
+    if await users.get_by_username(body.username):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already taken")
-    user = User(username=body.username, password_hash=await hash_password(body.password))
-    db.add(user)
-    await db.commit()
+    await users.create(body.username, await hash_password(body.password))
     log.info("Registered user: %s", body.username)
     return {"message": "User registered successfully"}
 
@@ -100,8 +99,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 # ---------------------------------------------------------------------------
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.username == body.username))
-    user = result.scalars().first()
+    users = UserRepository(db)
+    user = await users.get_by_username(body.username)
     if not user or not await verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     token = create_token(user.username)
@@ -118,22 +117,30 @@ async def send_message(
     db: AsyncSession = Depends(get_db),
     username: str = Depends(require_auth),
 ):
-    msg = Message(
+    messages = MessageRepository(db)
+    msg = await messages.create(
         sender=username,
         recipient=body.recipient,
         ciphertext=encrypt(body.content),
     )
-    db.add(msg)
-    await db.commit()
-    await db.refresh(msg)
     log.info("Message from %s to %s", username, body.recipient)
-    return MessageResponse(
+    response = MessageResponse(
         id=msg.id,
         sender=msg.sender,
         recipient=msg.recipient,
         content=body.content,
         created_at=msg.created_at,
     )
+    await broadcaster.publish(
+        BroadcastEvent(
+            id=msg.id,
+            sender=msg.sender,
+            recipient=msg.recipient,
+            content=body.content,
+            created_at=msg.created_at,
+        )
+    )
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -144,12 +151,8 @@ async def get_messages(
     db: AsyncSession = Depends(get_db),
     username: str = Depends(require_auth),
 ):
-    result = await db.execute(
-        select(Message)
-        .where((Message.sender == username) | (Message.recipient == username))
-        .order_by(Message.created_at)
-    )
-    rows = result.scalars().all()
+    messages = MessageRepository(db)
+    rows = await messages.get_for_user(username)
     return [
         MessageResponse(
             id=row.id,
@@ -160,3 +163,25 @@ async def get_messages(
         )
         for row in rows
     ]
+
+
+# ---------------------------------------------------------------------------
+# SSE Stream — persistent connection, receives messages in real time
+# ---------------------------------------------------------------------------
+@router.get("/stream")
+async def stream(
+    username: str = Depends(require_auth),
+) -> EventSourceResponse:
+    """SSE stream — client holds open connection, receives messages in real time."""
+
+    async def event_generator():
+        async with broadcaster.subscribe() as queue:
+            while True:
+                event: BroadcastEvent = await queue.get()
+                # Stream isolation: a user receives only messages where they are
+                # the sender or recipient.
+                if event.sender != username and event.recipient != username:
+                    continue
+                yield {"data": event.model_dump_json()}
+
+    return EventSourceResponse(event_generator())

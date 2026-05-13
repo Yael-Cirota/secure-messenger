@@ -355,7 +355,7 @@
 
     <div class="compose-bar">
       <input type="text" id="recipient-input" placeholder="Recipient" />
-      <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')doSend()" />
+      <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter'){event.preventDefault();doSend()}" />
       <button class="send-btn" onclick="doSend()">Send</button>
       <button class="refresh-btn" title="Refresh messages" onclick="loadMessages()">⟳</button>
     </div>
@@ -364,6 +364,8 @@
 
 <script>
   const BASE = 'http://localhost:8000';
+  const STORAGE_TOKEN_KEY = 'sm_token';
+  const STORAGE_USER_KEY = 'sm_user';
   let token = null;
   let me = null;
 
@@ -379,6 +381,21 @@
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
     return data;
+  }
+
+  function persistSession() {
+    if (token && me) {
+      localStorage.setItem(STORAGE_TOKEN_KEY, token);
+      localStorage.setItem(STORAGE_USER_KEY, me);
+      return;
+    }
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    localStorage.removeItem(STORAGE_USER_KEY);
+  }
+
+  function restoreSession() {
+    token = localStorage.getItem(STORAGE_TOKEN_KEY);
+    me = localStorage.getItem(STORAGE_USER_KEY);
   }
 
   function showError(msg) {
@@ -404,6 +421,7 @@
       const data = await api('POST', '/login', { username, password });
       token = data.access_token;
       me = username;
+      persistSession();
       enterChat();
     } catch (e) { showError(e.message); }
   }
@@ -425,6 +443,7 @@
 
   function doLogout() {
     token = null; me = null;
+    persistSession();
     document.getElementById('chat-screen').style.display = 'none';
     document.getElementById('auth-screen').style.display = '';
     document.getElementById('login-password').value = '';
@@ -503,6 +522,11 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  restoreSession();
+  if (token && me) {
+    enterChat();
   }
 </script>
 </body>

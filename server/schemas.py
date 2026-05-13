@@ -62,3 +62,16 @@ class MessageResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# Broadcast (Value Object / Typed Event)
+# ---------------------------------------------------------------------------
+
+class BroadcastEvent(BaseModel):
+    """Typed contract for events published to SSE subscribers."""
+    id:         int
+    sender:     str
+    recipient:  str
+    content:    str
+    created_at: datetime
