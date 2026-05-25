@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import time
 from getpass import getpass
@@ -68,7 +69,12 @@ def prompt_auth(client: httpx.Client) -> tuple[str, str]:
             continue
 
         username = input("Username: ").strip()
-        password = getpass("Password: ")
+        # getpass uses msvcrt on Windows and hangs inside VS Code's pseudoterminal.
+        _in_vscode = os.environ.get("TERM_PROGRAM") == "vscode"
+        if sys.platform == "win32" and _in_vscode:
+            password = input("Password (visible): ").strip()
+        else:
+            password = getpass("Password: ")
 
         if not username or not password:
             print("Username and password are required.\n")
