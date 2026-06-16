@@ -294,6 +294,17 @@
     }
 
     .refresh-btn:hover { background: rgba(255,255,255,0.12); }
+
+    .status-msg {
+      min-height: 22px;
+      padding: 0 20px 10px;
+      font-size: 0.82rem;
+      color: #fbbf24;
+      opacity: 0.92;
+    }
+
+    .status-msg.ok { color: #86efac; }
+    .status-msg.err { color: #fca5a5; }
   </style>
 </head>
 <body>
@@ -357,17 +368,20 @@
       <input type="text" id="recipient-input" placeholder="Recipient" />
       <input type="text" id="msg-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter'){event.preventDefault();doSend()}" />
       <button class="send-btn" onclick="doSend()">Send</button>
-      <button class="refresh-btn" title="Refresh messages" onclick="loadMessages()">⟳</button>
+      <button class="refresh-btn" title="Refresh messages" onclick="loadMessages(true)">⟳</button>
     </div>
+    <div class="status-msg" id="chat-status"></div>
   </div>
 </div>
 
 <script>
-  const BASE = 'http://localhost:8000';
+  const BASE = 'http://127.0.0.1:8000';
   const STORAGE_TOKEN_KEY = 'sm_token';
   const STORAGE_USER_KEY = 'sm_user';
   let token = null;
   let me = null;
+  let eventSource = null;
+  let sseRetryTimer = null;
 
   // ── helpers ──────────────────────────────────────────────────────
   async function api(method, path, body) {
@@ -399,7 +413,14 @@
   }
 
   function showError(msg) {
+    document.getElementById('auth-error').style.color = '#f87171';
     document.getElementById('auth-error').textContent = msg;
+  }
+
+  function setChatStatus(msg = '', kind = '') {
+    const el = document.getElementById('chat-status');
+    el.textContent = msg;
+    el.className = `status-msg${kind ? ' ' + kind : ''}`;
   }
 
   // ── tabs ─────────────────────────────────────────────────────────
@@ -443,6 +464,7 @@
 
   function doLogout() {
     token = null; me = null;
+    disconnectSse();
     persistSession();
     document.getElementById('chat-screen').style.display = 'none';
     document.getElementById('auth-screen').style.display = '';
@@ -456,14 +478,66 @@
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('chat-screen').style.display = 'block';
     document.getElementById('logged-as').textContent = `Signed in as ${me}`;
+    setChatStatus('Connecting…');
     loadMessages();
+    connectSse();
   }
 
-  async function loadMessages() {
+  function disconnectSse() {
+    if (sseRetryTimer) {
+      clearTimeout(sseRetryTimer);
+      sseRetryTimer = null;
+    }
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+  }
+
+  function connectSse() {
+    if (!token) return;
+
+    disconnectSse();
+    const streamUrl = `${BASE}/stream/browser?token=${encodeURIComponent(token)}`;
+    eventSource = new EventSource(streamUrl);
+
+    eventSource.onopen = () => {
+      setChatStatus('Live stream connected.', 'ok');
+    };
+
+    eventSource.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg && typeof msg === 'object') {
+          // refresh from API so message ordering and metadata stay consistent
+          loadMessages();
+        }
+      } catch (_) {
+        // ignore malformed events and keep stream alive
+      }
+    };
+
+    eventSource.onerror = () => {
+      setChatStatus('Live stream disconnected. Reconnecting…', 'err');
+      disconnectSse();
+      sseRetryTimer = setTimeout(() => {
+        connectSse();
+      }, 2000);
+    };
+  }
+
+  async function loadMessages(manual = false) {
     try {
       const msgs = await api('GET', '/messages');
       renderMessages(msgs);
-    } catch (e) { /* silently ignore refresh errors */ }
+      if (manual) setChatStatus('Messages refreshed.', 'ok');
+      else setChatStatus('Connected', 'ok');
+    } catch (e) {
+      const text = e.message === 'Failed to fetch'
+        ? 'Server unreachable. Is backend running on 127.0.0.1:8000?'
+        : `Load failed: ${e.message}`;
+      setChatStatus(text, 'err');
+    }
   }
 
   function renderMessages(msgs) {
@@ -507,12 +581,15 @@
     if (!recipient || !content) return;
 
     try {
-      const msg = await api('POST', '/messages', { recipient, content });
+      await api('POST', '/messages', { recipient, content });
       document.getElementById('msg-input').value = '';
       // append optimistically then refresh
       await loadMessages();
     } catch (e) {
-      alert('Error: ' + e.message);
+      const text = e.message === 'Failed to fetch'
+        ? 'Cannot send: backend is unreachable.'
+        : `Cannot send: ${e.message}`;
+      setChatStatus(text, 'err');
     }
   }
 

@@ -62,120 +62,28 @@ USEFUL PATTERN — how to save a new row:
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sse_starlette.sse import EventSourceResponse
 
-from .models import get_db
 from .schemas import (
     RegisterRequest, LoginRequest, TokenResponse,
     SendMessageRequest, MessageResponse, BroadcastEvent,
 )
-from .auth import hash_password, verify_password, create_token, require_auth
-from .crypto import encrypt, decrypt
-from .repository import UserRepository, MessageRepository
-from .broadcaster import broadcaster
+from .auth import require_auth, decode_token
+from .dependencies import get_auth_service, get_messaging_service, get_broadcaster
+from .services import AuthService, MessagingService
+from .broadcaster import Broadcaster
 
 
 log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# ---------------------------------------------------------------------------
-# TODO 1 — Register a new user
-# ---------------------------------------------------------------------------
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    users = UserRepository(db)
-    if await users.get_by_username(body.username):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already taken")
-    await users.create(body.username, await hash_password(body.password))
-    log.info("Registered user: %s", body.username)
-    return {"message": "User registered successfully"}
-
-
-# ---------------------------------------------------------------------------
-# TODO 2 — Login and receive a JWT token
-# ---------------------------------------------------------------------------
-@router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
-    users = UserRepository(db)
-    user = await users.get_by_username(body.username)
-    if not user or not await verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    token = create_token(user.username)
-    log.info("Login: %s", user.username)
-    return TokenResponse(access_token=token)
-
-
-# ---------------------------------------------------------------------------
-# TODO 3 — Send a message (authenticated)
-# ---------------------------------------------------------------------------
-@router.post("/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
-async def send_message(
-    body: SendMessageRequest,
-    db: AsyncSession = Depends(get_db),
-    username: str = Depends(require_auth),
-):
-    messages = MessageRepository(db)
-    msg = await messages.create(
-        sender=username,
-        recipient=body.recipient,
-        ciphertext=encrypt(body.content),
-    )
-    log.info("Message from %s to %s", username, body.recipient)
-    response = MessageResponse(
-        id=msg.id,
-        sender=msg.sender,
-        recipient=msg.recipient,
-        content=body.content,
-        created_at=msg.created_at,
-    )
-    await broadcaster.publish(
-        BroadcastEvent(
-            id=msg.id,
-            sender=msg.sender,
-            recipient=msg.recipient,
-            content=body.content,
-            created_at=msg.created_at,
-        )
-    )
-    return response
-
-
-# ---------------------------------------------------------------------------
-# TODO 4 — Fetch messages (authenticated)
-# ---------------------------------------------------------------------------
-@router.get("/messages", response_model=list[MessageResponse])
-async def get_messages(
-    db: AsyncSession = Depends(get_db),
-    username: str = Depends(require_auth),
-):
-    messages = MessageRepository(db)
-    rows = await messages.get_for_user(username)
-    return [
-        MessageResponse(
-            id=row.id,
-            sender=row.sender,
-            recipient=row.recipient,
-            content=decrypt(row.ciphertext),
-            created_at=row.created_at,
-        )
-        for row in rows
-    ]
-
-
-# ---------------------------------------------------------------------------
-# SSE Stream — persistent connection, receives messages in real time
-# ---------------------------------------------------------------------------
-@router.get("/stream")
-async def stream(
-    username: str = Depends(require_auth),
-) -> EventSourceResponse:
-    """SSE stream — client holds open connection, receives messages in real time."""
+def _stream_response(username: str, app_broadcaster: Broadcaster) -> EventSourceResponse:
+    """Build a filtered SSE response for a specific authenticated user."""
 
     async def event_generator():
-        async with broadcaster.subscribe() as queue:
+        async with app_broadcaster.subscribe() as queue:
             while True:
                 event: BroadcastEvent = await queue.get()
                 # Stream isolation: a user receives only messages where they are
@@ -185,3 +93,82 @@ async def stream(
                 yield {"data": event.model_dump_json()}
 
     return EventSourceResponse(event_generator())
+
+
+# ---------------------------------------------------------------------------
+# TODO 1 — Register a new user
+# ---------------------------------------------------------------------------
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(body: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)):
+    await auth_service.register(body.username, body.password)
+    log.info("Registered user: %s", body.username)
+    return {"message": "User registered successfully"}
+
+
+# ---------------------------------------------------------------------------
+# TODO 2 — Login and receive a JWT token
+# ---------------------------------------------------------------------------
+@router.post("/login", response_model=TokenResponse)
+async def login(body: LoginRequest, auth_service: AuthService = Depends(get_auth_service)):
+    token = await auth_service.login(body.username, body.password)
+    log.info("Login: %s", body.username)
+    return token
+
+
+# ---------------------------------------------------------------------------
+# TODO 3 — Send a message (authenticated)
+# ---------------------------------------------------------------------------
+@router.post("/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+async def send_message(
+    body: SendMessageRequest,
+    username: str = Depends(require_auth),
+    messaging_service: MessagingService = Depends(get_messaging_service),
+):
+    response = await messaging_service.send_message(
+        sender=username,
+        recipient=body.recipient,
+        content=body.content,
+    )
+    log.info("Message from %s to %s", username, body.recipient)
+    return response
+
+
+# ---------------------------------------------------------------------------
+# TODO 4 — Fetch messages (authenticated)
+# ---------------------------------------------------------------------------
+@router.get("/messages", response_model=list[MessageResponse])
+async def get_messages(
+    username: str = Depends(require_auth),
+    messaging_service: MessagingService = Depends(get_messaging_service),
+):
+    return await messaging_service.list_messages(username)
+
+
+# ---------------------------------------------------------------------------
+# SSE Stream — persistent connection, receives messages in real time
+# ---------------------------------------------------------------------------
+@router.get("/stream")
+async def stream(
+    username: str = Depends(require_auth),
+    app_broadcaster: Broadcaster = Depends(get_broadcaster),
+) -> EventSourceResponse:
+    """SSE stream — client holds open connection, receives messages in real time."""
+
+    return _stream_response(username, app_broadcaster)
+
+
+@router.get("/stream/browser")
+async def stream_browser(
+    token: str = Query(..., min_length=1),
+    app_broadcaster: Broadcaster = Depends(get_broadcaster),
+) -> EventSourceResponse:
+    """SSE for browser EventSource, which cannot send Authorization headers."""
+
+    username = decode_token(token)
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+    return _stream_response(username, app_broadcaster)

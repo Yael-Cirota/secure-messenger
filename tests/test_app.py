@@ -287,7 +287,7 @@ class TestSSE:
     async def test_stream_connection_and_message_delivery(self, client):
         register_and_login(client, "alice", "secret123")
 
-        alice_stream = await stream(username="alice")
+        alice_stream = await stream(username="alice", app_broadcaster=broadcaster)
         alice_task = None
         try:
             alice_task = asyncio.create_task(next_sse_payload(alice_stream, timeout_seconds=2.0))
@@ -324,9 +324,9 @@ class TestSSE:
         bob_token = register_and_login(client, "bob", "secret456")
         charlie_token = register_and_login(client, "charlie", "secret789")
 
-        alice_stream = await stream(username="alice")
-        bob_stream = await stream(username="bob")
-        charlie_stream = await stream(username="charlie")
+        alice_stream = await stream(username="alice", app_broadcaster=broadcaster)
+        bob_stream = await stream(username="bob", app_broadcaster=broadcaster)
+        charlie_stream = await stream(username="charlie", app_broadcaster=broadcaster)
         alice_task = None
         bob_task = None
         charlie_task = None
@@ -388,3 +388,11 @@ class TestSSE:
     def test_stream_requires_auth_header(self, client):
         response = client.get("/stream")
         assert response.status_code in (401, 403)
+
+    def test_stream_browser_rejects_invalid_token(self, client):
+        response = client.get("/stream/browser?token=fake-token")
+        assert response.status_code == 401
+
+    def test_stream_browser_requires_token(self, client):
+        response = client.get("/stream/browser")
+        assert response.status_code == 422
